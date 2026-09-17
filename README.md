@@ -119,20 +119,53 @@ overprices the home team and the away side is the play. `tests/test_schedule.py`
 asserts this against the real file, so if nflverse ever flips it the tests fail
 instead of every pick silently inverting.
 
+## How big is the edge in practice?
+
+Smaller than the table above might suggest. On the first real sheet read
+(2026 week 2), **14 of 16 pool lines matched the market exactly**:
+
+| game | pool | market | edge |
+|---|---|---|---|
+| DET @ BUF | BUF −4.5 | BUF −5.5 | 1.0 |
+| CIN @ HOU | HOU −3.0 | HOU −2.5 | 0.5 |
+| the other 14 | — | — | 0 |
+
+1.5 points of edge across the whole slate, worth about +0.06 expected wins.
+PoolHost is clearly pulling a real market feed rather than setting lines by
+hand and leaving them, so the gap is line *movement* since the sheet posted,
+not a lazy number.
+
+That is one week, and it is the wrong week to judge from: the market moves most
+between Thursday and Sunday, and this comparison was made on Thursday. The
+honest read is that the edge is real but thin, and its size is an open
+empirical question.
+
+**Measuring it properly is the next step and it is nearly free.** Each captured
+sheet is committed to `data/pool/`, and nflverse's `spread_line` becomes the
+*closing* line once a game is played. So after a few weeks, pool line vs.
+closing line can be graded directly — no extra data collection needed, just
+time.
+
 ## Status
 
-Working and tested end to end, with one thing outstanding.
+Working end to end, 64 tests passing.
 
-- **The scraper has never run against the live site.** `poolhost.com` is
-  blocked from the environment this was built in, so `parse.py` was written
-  markup-agnostically (it scans for rows containing two resolvable team names
-  and a number, in any of three layouts) and tested against synthetic sheets in
-  all three. It may well work first try; it may need one adjustment once
-  someone runs it. `--text` is the fallback that cannot break.
-- **The market line is nflverse's consensus**, refreshed when that file is
-  published — not a live intraday quote. It is the right reference for a
-  Thursday run, but if the pool's sheet turns out to be days staler than that,
-  a real-time odds feed would widen the measured edge.
+- **The sheet parser is verified** against a real PoolHost sheet — all 16 games,
+  correctly oriented. It reads each team from its logo filename
+  (`/images/teamlogos/BUF.png`) rather than its display text, which matters
+  because PoolHost writes the New York and Los Angeles teams as `New York (A)`
+  / `New York (N)`, and uses `AZ`, `JAC` and `LAR` where nflverse uses `ARI`,
+  `JAX` and `LA`.
+- **The login flow is not verified.** `poolhost.com` is blocked from the
+  environment this was built in, so `client.py` has never authenticated. The
+  form is discovered at runtime rather than hardcoded, which should survive a
+  template change, but it needs one real run. `--html` and `--text` both work
+  today regardless.
+- **The market line is nflverse's consensus**, not a live intraday quote. If
+  the two sources turn out to refresh on similar schedules, some of the 14/16
+  agreement above is them agreeing with each other rather than the pool being
+  sharp — a real-time odds feed would settle that.
 - **No margin model yet.** EPA/play, Elo and rest are the obvious inputs, and
-  the sibling survivor-pool project already has providers for all three. They
-  only matter for games where the lines agree.
+  the sibling survivor-pool project already has providers for all three. Given
+  how many games come back with no line discrepancy, this matters more than it
+  looked at the start: 14 of 16 games this week were coin flips.

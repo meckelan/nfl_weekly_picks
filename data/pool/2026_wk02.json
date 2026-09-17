@@ -1,0 +1,152 @@
+{
+  "season": 2026,
+  "week": 2,
+  "source": "/root/.claude/uploads/d376556e-9277-5535-97d9-2b7f96a03d58/dd3980b9-Office_Pool_Manager_-_Pool_Home_-_PoolHost.com.html",
+  "captured_at": "2026-09-17T20:02:32Z",
+  "lines": [
+    {
+      "favorite": "BUF",
+      "underdog": "DET",
+      "points": 4.5,
+      "raw": "DET at BUF (home -4.5)",
+      "kickoff": "Thu. Sep. 17 - 08:15 PM",
+      "home_team": "BUF",
+      "pool_game_id": "65"
+    },
+    {
+      "favorite": "CAR",
+      "underdog": "ATL",
+      "points": 2.5,
+      "raw": "CAR at ATL (home +2.5)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "ATL",
+      "pool_game_id": "66"
+    },
+    {
+      "favorite": "BAL",
+      "underdog": "NO",
+      "points": 8.5,
+      "raw": "NO at BAL (home -8.5)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "BAL",
+      "pool_game_id": "67"
+    },
+    {
+      "favorite": "CHI",
+      "underdog": "MIN",
+      "points": 4.5,
+      "raw": "MIN at CHI (home -4.5)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "CHI",
+      "pool_game_id": "68"
+    },
+    {
+      "favorite": "HOU",
+      "underdog": "CIN",
+      "points": 3.0,
+      "raw": "CIN at HOU (home -3)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "HOU",
+      "pool_game_id": "69"
+    },
+    {
+      "favorite": "NE",
+      "underdog": "PIT",
+      "points": 5.5,
+      "raw": "PIT at NE (home -5.5)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "NE",
+      "pool_game_id": "70"
+    },
+    {
+      "favorite": "GB",
+      "underdog": "NYJ",
+      "points": 3.5,
+      "raw": "GB at NYJ (home +3.5)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "NYJ",
+      "pool_game_id": "71"
+    },
+    {
+      "favorite": "TB",
+      "underdog": "CLE",
+      "points": 8.5,
+      "raw": "CLE at TB (home -8.5)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "TB",
+      "pool_game_id": "72"
+    },
+    {
+      "favorite": "PHI",
+      "underdog": "TEN",
+      "points": 7.0,
+      "raw": "PHI at TEN (home +7)",
+      "kickoff": "Sun. Sep. 20 - 01:00 PM",
+      "home_team": "TEN",
+      "pool_game_id": "73"
+    },
+    {
+      "favorite": "DEN",
+      "underdog": "JAX",
+      "points": 2.5,
+      "raw": "JAX at DEN (home -2.5)",
+      "kickoff": "Sun. Sep. 20 - 04:05 PM",
+      "home_team": "DEN",
+      "pool_game_id": "74"
+    },
+    {
+      "favorite": "LAC",
+      "underdog": "LV",
+      "points": 6.5,
+      "raw": "LV at LAC (home -6.5)",
+      "kickoff": "Sun. Sep. 20 - 04:05 PM",
+      "home_team": "LAC",
+      "pool_game_id": "75"
+    },
+    {
+      "favorite": "SEA",
+      "underdog": "ARI",
+      "points": 3.5,
+      "raw": "SEA at ARI (home +3.5)",
+      "kickoff": "Sun. Sep. 20 - 04:25 PM",
+      "home_team": "ARI",
+      "pool_game_id": "76"
+    },
+    {
+      "favorite": "DAL",
+      "underdog": "WAS",
+      "points": 4.5,
+      "raw": "WAS at DAL (home -4.5)",
+      "kickoff": "Sun. Sep. 20 - 04:25 PM",
+      "home_team": "DAL",
+      "pool_game_id": "77"
+    },
+    {
+      "favorite": "SF",
+      "underdog": "MIA",
+      "points": 13.5,
+      "raw": "MIA at SF (home -13.5)",
+      "kickoff": "Sun. Sep. 20 - 04:25 PM",
+      "home_team": "SF",
+      "pool_game_id": "78"
+    },
+    {
+      "favorite": "KC",
+      "underdog": "IND",
+      "points": 6.5,
+      "raw": "IND at KC (home -6.5)",
+      "kickoff": "Sun. Sep. 20 - 08:20 PM",
+      "home_team": "KC",
+      "pool_game_id": "79"
+    },
+    {
+      "favorite": "LA",
+      "underdog": "NYG",
+      "points": 7.0,
+      "raw": "NYG at LA (home -7)",
+      "kickoff": "Mon. Sep. 21 - 08:15 PM",
+      "home_team": "LA",
+      "pool_game_id": "80"
+    }
+  ]
+}

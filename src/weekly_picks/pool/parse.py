@@ -227,7 +227,19 @@ def _text_row(line: str) -> list[str]:
 
 
 def parse_sheet(html: str) -> list[PoolLine]:
-    """Extract every line from a pool sheet's HTML."""
+    """Extract every line from a pool sheet's HTML.
+
+    Uses the PoolHost-specific reader when the page is one of theirs, since it
+    can read the home side and each number's owner directly instead of
+    inferring them. Falls back to the generic scan otherwise.
+    """
+    from .poolhost import looks_like_poolhost, parse_poolhost
+
+    if looks_like_poolhost(html):
+        lines = parse_poolhost(html)
+        if lines:
+            return lines
+
     lines = _parse_rows(_rows_from_html(html))
     if not lines:
         raise ParseError(

@@ -19,6 +19,13 @@ class PoolLine:
     points: float           # how many points the favorite lays; >= 0
     raw: str = ""           # the source row, kept for debugging a bad parse
 
+    # Filled in when the sheet says so (PoolHost does). Metadata only —
+    # orientation still comes from the schedule, but these let the join warn
+    # when the sheet and the schedule disagree about a game.
+    kickoff: str = ""       # as printed on the sheet, e.g. "Thu. Sep. 17 - 08:15 PM"
+    home_team: str = ""     # the side the sheet marks as home
+    pool_game_id: str = ""  # the pool's own id, needed to submit a pick
+
     def __post_init__(self) -> None:
         if self.points < 0:
             raise ValueError(f"points must be non-negative, got {self.points}")

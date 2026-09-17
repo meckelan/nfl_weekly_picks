@@ -1,0 +1,75 @@
+<!-- Trimmed copy of PoolHost's pick-sheet markup: the structure only, with
+     synthetic games and no pool or member details. Covers a home favorite,
+     a home underdog, a pick'em, and an empty column. -->
+<html><body>
+<div class="info-key"><span><i class="fa fa-home"></i> = Home,</span></div>
+<div class="row">
+  <div class="col-md-6 game-box-container">
+    <div class="game-box ">
+      <div class="game-title"><div class="game-date">Thu. Sep. 17 - 08:15 PM</div></div>
+      <div class="game-body">
+        <input type="hidden" id="WeekGames_0__GameId" name="WeekGames[0].GameId" value="65" />
+        <input type="hidden" class="team-picked" name="WeekGames[0].TeamPickedId" value="0" />
+        <div class="col-md-12 game-teams">
+          <div class="team away-team   col-md-12 " onclick="PickemPicks.onTeamSelect(this, 22,)">
+            <div class="team-icon"><img src="/images/teamlogos/DET.png" /></div>
+            <div class="team-type">&nbsp;</div>
+            <div class="team-name">Detroit</div>
+          </div>
+          <div class="team home-team  col-md-12 " onclick="PickemPicks.onTeamSelect(this, 2, )">
+            <div class="team-icon"><img src="/images/teamlogos/BUF.png" /></div>
+            <div class="team-type"><i class="fa fa-home"></i></div>
+            <div class="team-name">Buffalo</div>
+            <div class="team-spread">-4.5</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- An empty container: PoolHost emits these to pad the grid. -->
+  <div class="col-md-6 game-box-container"></div>
+
+  <div class="col-md-6 game-box-container">
+    <div class="game-box ">
+      <div class="game-title"><div class="game-date">Sun. Sep. 20 - 01:00 PM</div></div>
+      <div class="game-body">
+        <input type="hidden" id="WeekGames_1__GameId" name="WeekGames[1].GameId" value="71" />
+        <div class="col-md-12 game-teams">
+          <div class="team away-team">
+            <div class="team-icon"><img src="/images/teamlogos/GB.png" /></div>
+            <div class="team-name">Green Bay</div>
+          </div>
+          <div class="team home-team">
+            <div class="team-icon"><img src="/images/teamlogos/NYJ.png" /></div>
+            <div class="team-type"><i class="fa fa-home"></i></div>
+            <div class="team-name">New York (A)</div>
+            <div class="team-spread">+3.5</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 game-box-container">
+    <div class="game-box ">
+      <div class="game-title"><div class="game-date">Sun. Sep. 20 - 04:25 PM</div></div>
+      <div class="game-body">
+        <input type="hidden" id="WeekGames_2__GameId" name="WeekGames[2].GameId" value="76" />
+        <div class="col-md-12 game-teams">
+          <div class="team away-team">
+            <div class="team-icon"><img src="/images/teamlogos/SEA.png" /></div>
+            <div class="team-name">Seattle</div>
+          </div>
+          <div class="team home-team">
+            <div class="team-icon"><img src="/images/teamlogos/AZ.png" /></div>
+            <div class="team-type"><i class="fa fa-home"></i></div>
+            <div class="team-name">Arizona</div>
+            <div class="team-spread">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

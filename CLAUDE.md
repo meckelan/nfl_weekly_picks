@@ -25,6 +25,17 @@ market no longer believes, and that is worth far more than forecasting:
 A margin model is still worth building, but only for the games where the pool
 and the market agree — there is no edge in those by construction.
 
+**Reality check from the first real sheet (2026 week 2): 14 of 16 pool lines
+matched the market exactly**, total edge 1.5 points. PoolHost is pulling a live
+market feed, so the gap is movement since posting, not a hand-set number. The
+stale-line edge is real but thin, and one Thursday is not enough to size it.
+Because captured sheets are committed and nflverse's `spread_line` becomes the
+closing line after kickoff, pool-vs-closing can be graded after a few weeks
+with no extra collection. Do that before concluding anything.
+
+Practical consequence: with most games carrying no discrepancy, the margin
+model is more important than it first appeared, not less.
+
 ## Conventions
 
 Matching nflverse, everywhere in this codebase:
@@ -66,7 +77,29 @@ its Supabase script was a one-off that nothing reads from.
 the scraper cannot be exercised there. Develop it against saved HTML
 (`--html`), and run `--live` locally or in Actions.
 
+## PoolHost specifics
+
+Learned from a real sheet, `tests/fixtures/poolhost_sheet.html` is a trimmed,
+synthetic copy of the markup (the repo is public — do not commit a real sheet,
+it carries the username and pool name).
+
+- Each game is `div.game-box`; the two sides are `div.team.away-team` and
+  `div.team.home-team`.
+- **Read the team from its logo filename** (`/images/teamlogos/BUF.png`), not
+  the display text: PoolHost writes the New York and Los Angeles teams as
+  `New York (A)` / `New York (N)` (A = AFC, N = NFC).
+- Their codes are not all nflverse codes: `AZ` -> `ARI`, `JAC` -> `JAX`,
+  `LAR` -> `LA`. `teams.py` handles these.
+- `div.team-spread` sits inside one team's block and is quoted from that team's
+  point of view (negative = laying). On every game seen so far it is on the
+  home side, but the parser reads whichever side carries it rather than
+  assuming.
+- `WeekGames[N].GameId` and the `onTeamSelect(this, <teamId>)` handler are
+  captured — enough to *submit* picks programmatically later, which is not
+  built and should not be without asking first.
+
 ## Status
 
-Working end to end, 55 tests passing. Outstanding: the scraper has never met
-the live site; no margin model yet for the lines-agree games.
+Working end to end, 64 tests passing. Outstanding: the login flow has never run
+against the live site (the sheet parser has, and is verified); no margin model
+yet for the lines-agree games, which is most of them.

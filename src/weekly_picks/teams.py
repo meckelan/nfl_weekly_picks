@@ -34,15 +34,18 @@ _TEAMS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "IND": (("indianapolis", "indy"), ("colts",)),
     "JAX": (("jacksonville",), ("jaguars", "jags")),
     "KC":  (("kansas city", "kansascity"), ("chiefs",)),
-    "LA":  (("los angeles rams", "la rams", "st louis", "saint louis"), ("rams",)),
-    "LAC": (("los angeles chargers", "la chargers", "san diego"), ("chargers", "bolts")),
+    # PoolHost disambiguates same-city teams by conference: "(A)" = AFC,
+    # "(N)" = NFC. The parentheses are stripped during normalization.
+    "LA":  (("los angeles rams", "la rams", "los angeles n", "st louis", "saint louis"), ("rams",)),
+    "LAC": (("los angeles chargers", "la chargers", "los angeles a", "san diego"),
+            ("chargers", "bolts")),
     "LV":  (("las vegas", "oakland", "vegas"), ("raiders",)),
     "MIA": (("miami",), ("dolphins", "fins")),
     "MIN": (("minnesota",), ("vikings", "vikes")),
     "NE":  (("new england", "newengland"), ("patriots", "pats")),
     "NO":  (("new orleans", "neworleans"), ("saints",)),
-    "NYG": (("new york giants", "ny giants"), ("giants",)),
-    "NYJ": (("new york jets", "ny jets"), ("jets",)),
+    "NYG": (("new york giants", "ny giants", "new york n"), ("giants",)),
+    "NYJ": (("new york jets", "ny jets", "new york a"), ("jets",)),
     "PHI": (("philadelphia", "philly"), ("eagles",)),
     "PIT": (("pittsburgh",), ("steelers",)),
     "SEA": (("seattle",), ("seahawks", "hawks")),
@@ -62,6 +65,8 @@ _ABBREV_ALIASES: dict[str, str] = {
     "SD": "LAC", "SDG": "LAC", "SND": "LAC", "LACH": "LAC",
     "STL": "LA", "LAR": "LA", "RAM": "LA", "LARM": "LA",
     "WSH": "WAS", "WFT": "WAS",
+    # PoolHost logo filenames (/images/teamlogos/<code>.png)
+    "AZ": "ARI", "JAC": "JAX", "LAR": "LA",
     "NYG": "NYG", "NYJ": "NYJ",
 }
 
