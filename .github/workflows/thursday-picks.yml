@@ -1,0 +1,64 @@
+name: Thursday picks
+
+# Manual for now. Once scrape_pool has been verified against the live site,
+# uncomment the schedule to have this run itself.
+#
+#   16:00 UTC = 12:00 ET while daylight saving is on, 11:00 ET after it ends —
+#   comfortably before Thursday night kickoff and late enough that the week's
+#   lines are posted.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 16 * * 4"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: thursday-picks
+  cancel-in-progress: false
+
+jobs:
+  picks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Refresh schedule, results and market lines
+        run: python scripts/fetch_data.py
+
+      - name: Capture the pool's lines
+        env:
+          POOLHOST_URL: ${{ secrets.POOLHOST_URL }}
+          POOLHOST_USERNAME: ${{ secrets.POOLHOST_USERNAME }}
+          POOLHOST_PASSWORD: ${{ secrets.POOLHOST_PASSWORD }}
+        run: python scripts/pool_lines.py --live
+
+      - name: Make the picks
+        run: python scripts/make_picks.py --csv picks.csv | tee picks.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: picks
+          path: |
+            picks.csv
+            picks.txt
+
+      - name: Commit the captured sheet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/pool
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "Pool lines: week captured automatically"
+            git push
+          fi

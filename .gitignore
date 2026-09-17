@@ -1,0 +1,16 @@
+# Regenerable from nflverse in seconds — see scripts/fetch_data.py
+data/raw/*.csv
+data/raw/*.parquet
+
+# Archived pool pages: they can contain the pool's member list
+data/pool/html/
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+.pytest_cache/

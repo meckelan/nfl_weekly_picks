@@ -1,0 +1,79 @@
+"""Capture the pool's posted lines for a week.
+
+Three ways in, in order of how much can go wrong:
+
+    # scrape the live site (needs POOLHOST_* in the environment)
+    python3 scripts/pool_lines.py --week 3 --live
+
+    # re-parse a page you saved from the browser
+    python3 scripts/pool_lines.py --week 3 --html saved.html
+
+    # paste the sheet (always works, no scraping involved)
+    python3 scripts/pool_lines.py --week 3 --text lines.txt
+
+Writes data/pool/<season>_wk<week>.json, which is what the picks run reads.
+Re-running overwrites that week, so a bad scrape is never permanent.
+"""
+
+import _bootstrap  # noqa: F401
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from weekly_picks.pool import PoolSheet, parse_sheet, parse_text
+from weekly_picks.schedule import current_week, load_games
+
+POOL_DIR = Path(__file__).resolve().parents[1] / "data" / "pool"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--live", action="store_true", help="scrape poolhost")
+    source.add_argument("--html", type=Path, help="parse a saved HTML file")
+    source.add_argument("--text", type=Path, help="parse a pasted text file ('-' for stdin)")
+    parser.add_argument("--season", type=int, default=None)
+    parser.add_argument("--week", type=int, default=None)
+    parser.add_argument("--url", default=None, help="override POOLHOST_URL")
+    args = parser.parse_args()
+
+    games = load_games()
+    season = args.season or int(games[games["kickoff"].notna()]["season"].max())
+    week = args.week or current_week(games, season)
+
+    if args.live:
+        from weekly_picks.pool.client import PoolHostClient
+
+        client = PoolHostClient(url=args.url)
+        try:
+            client.login()
+        except Exception as exc:                                  # noqa: BLE001
+            print(f"login failed ({exc}); trying the page unauthenticated", file=sys.stderr)
+        html = client.fetch()
+        lines, origin = parse_sheet(html), client.url
+    elif args.html:
+        lines, origin = parse_sheet(args.html.read_text(encoding="utf-8")), str(args.html)
+    else:
+        raw = sys.stdin.read() if str(args.text) == "-" else args.text.read_text(encoding="utf-8")
+        lines, origin = parse_text(raw), str(args.text)
+
+    sheet = PoolSheet(season=season, week=week, lines=lines, source=origin)
+
+    POOL_DIR.mkdir(parents=True, exist_ok=True)
+    out = POOL_DIR / f"{season}_wk{week:02d}.json"
+    out.write_text(json.dumps(sheet.to_dict(), indent=2) + "\n")
+
+    print(f"{len(sheet)} lines captured for {season} week {week} -> {out}\n")
+    for line in sheet.lines:
+        points = "PK" if line.points == 0 else f"-{line.points:g}"
+        print(f"  {line.favorite:>3} {points:>5}  over  {line.underdog}")
+
+    expected = len(games[(games.season == season) & (games.week == week)])
+    if expected and len(sheet) != expected:
+        print(f"\nWARNING: schedule has {expected} games this week, sheet has {len(sheet)}.",
+              file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
