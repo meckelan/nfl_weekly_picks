@@ -1,6 +1,8 @@
 # Regenerable from nflverse in seconds — see scripts/fetch_data.py
 data/raw/*.csv
 data/raw/*.parquet
+# ~5 MB of weekly team stats, only needed by research_market_efficiency.py
+data/raw/team_stats_weekly/
 
 # Archived pool pages: they can contain the pool's member list
 data/pool/html/

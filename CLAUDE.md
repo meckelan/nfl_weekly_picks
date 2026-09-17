@@ -22,19 +22,43 @@ market no longer believes, and that is worth far more than forecasting:
 `calibration.py` measures this from the empirical distribution of
 `margin - closing_spread`, which keeps the key numbers (3, 7, 10) intact.
 
-A margin model is still worth building, but only for the games where the pool
-and the market agree — there is no edge in those by construction.
-
 **Reality check from the first real sheet (2026 week 2): 14 of 16 pool lines
-matched the market exactly**, total edge 1.5 points. PoolHost is pulling a live
-market feed, so the gap is movement since posting, not a hand-set number. The
-stale-line edge is real but thin, and one Thursday is not enough to size it.
-Because captured sheets are committed and nflverse's `spread_line` becomes the
-closing line after kickoff, pool-vs-closing can be graded after a few weeks
-with no extra collection. Do that before concluding anything.
+matched the market exactly**, total edge 1.5 points. PoolHost pulls a live
+market feed, so the gap is movement since posting, not a hand-set number.
 
-Practical consequence: with most games carrying no discrepancy, the margin
-model is more important than it first appeared, not less.
+## Do not build a margin model — it was tried and it does not work
+
+`scripts/research_market_efficiency.py` reproduces this. Walk-forward on Elo +
+rolling EPA/play + rest + divisional, modelling the residual (margin − spread),
+training only on prior seasons:
+
+    4,135 out-of-sample picks (2006-2025) -> 2,077-2,058, 50.23%, z = +0.30
+
+Elo correlates 0.84 with the market spread and EPA/play 0.78 — they re-derive
+the number rather than adding to it. A 13-rule screen of structural biases
+produced two survivors at |z| > 2 where chance predicts 0.7, and both say
+"take the underdog", which the policy already does.
+
+If you are about to add a model, run that script first.
+
+## What actually wins the pool: differentiation
+
+Best-record-wins pays the MAXIMUM, not the mean. Picking by the same process
+as the field earns a fair share of the pot and nothing more. Simulated, 20
+entrants, field at 85% favorites, nobody with an edge:
+
+    always the underdog      34.3%   (6.9x fair share)
+    coin flip                20.5%   (4.1x)
+    pick like everyone else   4.9%   (1.0x)
+    always the favorite       0.1%
+
+The lesson is not "dogs are undervalued" — it is that sharing the field's coin
+flip is what costs you. The dog side wins the tiebreak only because favorites
+cover 48.89% of decided games (n=6,793), so fading is free.
+
+Sensitive: if the crowd's side covered 52% instead, fading stops helping; at
+54% it hurts. And it assumes winner-take-all — fade less if the pool pays
+places.
 
 ## Conventions
 
@@ -98,8 +122,17 @@ it carries the username and pool name).
   captured — enough to *submit* picks programmatically later, which is not
   built and should not be without asking first.
 
+## The highest-value thing left
+
+`crowd.py` models what share of the pool takes the favorite, and the entire
+fade strategy is sized off it — but it is currently a **prior** (logistic in
+the spread, 63% at −3, 86% at −10), not a measurement. PoolHost publishes a
+**Pick Distribution** page. Feed a few weeks of it into `CrowdModel.fit()` and
+the guess becomes your pool's real behaviour. Do this before tuning anything
+else.
+
 ## Status
 
-Working end to end, 64 tests passing. Outstanding: the login flow has never run
-against the live site (the sheet parser has, and is verified); no margin model
-yet for the lines-agree games, which is most of them.
+Working end to end, 82 tests passing. Outstanding: the login flow has never run
+against the live site (the sheet parser has, and is verified); the crowd model
+is un-calibrated; pool size and payout structure are unmodelled.

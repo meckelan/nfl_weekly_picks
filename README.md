@@ -1,55 +1,126 @@
-# NFL Weekly Picks — beating the pool's spread
+# NFL Weekly Picks
 
-A weekly ATS pick'em pool: every player picks a winner against the spread in
-every game, and the best season-long record wins. This project makes those
+A season-long ATS pick'em pool: every player picks a side against the spread in
+every game, every week, and the best record at the end wins. This makes those
 picks on Thursday afternoon, before the first kickoff.
 
-## The idea
+Short version of what the data says:
 
-The closing spread is very hard to beat. Measured over **6,983 games
-(1999–2026)**, the market's line is close to perfectly calibrated:
+1. **You cannot out-predict the closing spread.** Measured, not assumed.
+2. **The pool's line sometimes lags the market.** That gap is a real edge, but
+   it is thin — 2 of 16 games in the first week checked.
+3. **What actually wins a best-record pool is not being right, it is being
+   different.** This is the big lever, and it is worth more than any
+   handicapping edge you could realistically get.
+
+## 1. The market is efficient
+
+Over **6,983 graded games (1999-2026)** the closing spread is close to
+perfectly calibrated:
 
 | | |
 |---|---|
 | mean error (margin − spread) | **+0.06 points** |
 | home teams covering | **48.96%** of decided games |
-| standard deviation of the error | 13.19 points |
+| std. deviation of the error | 13.19 points |
 
-A model that predicts game margins is trying to out-forecast that. The
-realistic ceiling is a percentage point or two, and most attempts land under
-50%.
+`scripts/research_market_efficiency.py` then tries to beat it. Elo and rolling
+EPA/play ratings are built as-of each week, and used to model the *residual* —
+what the market missed — with a walk-forward fit that only ever sees prior
+seasons:
 
-**But the pool isn't offering the closing line.** It posts its lines once, when
-the sheet goes up, and leaves them there. The market keeps moving all week on
-injuries, weather and money. Wherever the pool's number and the current market
-number disagree, you can take the side the disagreement favors — and you're
-betting into a number the market itself no longer believes.
+| | |
+|---|---|
+| out-of-sample picks | **4,135** (2006-2025) |
+| record | 2,077-2,058 |
+| hit rate | **50.23%** |
+| 95% CI | [48.71%, 51.75%] |
+| z vs. 50% | **+0.30** |
 
-That edge is not a forecast. It's arithmetic, and it is far larger than
-anything a margin model produces:
+The reason shows up in the inputs: Elo correlates **0.84** with the market
+spread, EPA/play **0.78**. They are not adding information, they are
+re-deriving the number Vegas already posted.
 
-| pool line differs by | win rate (decided games) | vs. a coin flip |
+Screening the classic structural biases does no better. Of 13 rules, two clear
+|z| = 2 where chance alone predicts about 0.7 — and both just say *take the
+underdog*:
+
+| rule | n | hit% | since 2015 |
+|---|---|---|---|
+| weeks 1-3: take the dog | 1,251 | 53.40% | 54.22% |
+| divisional: take the dog | 2,625 | 52.08% | 52.31% |
+| take the dog, spread ≥ 10 | 845 | 52.19% | 50.43% |
+| home underdog | 2,395 | 50.06% | 50.14% |
+
+**So there is no margin model in this project.** That is a finding, not an
+omission.
+
+## 2. Stale pool lines — a real but thin edge
+
+The pool posts its lines once. The market keeps moving on injuries, weather and
+money. Where the two disagree, you are betting into a number the market itself
+no longer believes — that is arithmetic, not forecasting.
+
+Measured off the empirical distribution of `margin − closing_spread`, so the
+NFL's key numbers (3, 7, 10) survive instead of being smoothed away by a normal
+curve:
+
+| pool line off by | win rate (decided) | vs. coin flip |
 |---|---|---|
 | 0.5 pts | 52.3% | +2.3 |
 | 1.0 pts | 54.1% | +4.1 |
-| 1.5 pts | 55.7% | +5.7 |
 | 2.0 pts | 57.3% | +7.3 |
-| 2.5 pts | 58.7% | +8.7 |
 | 3.0 pts | **60.1%** | +10.1 |
-| 3.5 pts | 61.6% | +11.6 |
 | 7.0 pts | 72.3% | +22.3 |
 
-Measured, not assumed: these come from the empirical distribution of
-`margin − closing_spread` over every graded game, so the NFL's key numbers
-(3, 7, 10) are baked in rather than smoothed away by a normal curve.
-Regenerate with `scripts/calibrate_edge.py`.
+In practice the gaps are small. On the first real sheet (2026 week 2),
+**14 of 16 pool lines matched the market exactly** — 1.5 points of edge across
+the slate. PoolHost pulls a live feed rather than hand-setting lines, so the
+gap is only movement since posting.
 
-So the strategy is:
+Regenerate the table with `scripts/calibrate_edge.py`.
 
-1. **Find the discrepancies.** Scrape the pool's lines, compare to the market,
-   take every side with daylight. This is where essentially all the edge is.
-2. **Everything else is a coin flip** until there's a margin model, and the
-   report labels those games honestly rather than dressing them up.
+## 3. Differentiation is the real lever
+
+A best-record-wins pool pays the **maximum**, not the mean. Picking by the same
+process as everyone else earns a fair share of the pot and nothing more.
+
+Simulated: 20 entrants, a field that takes the favorite 85% of the time, nobody
+with any real edge.
+
+| your strategy | win rate | vs. 5% fair share |
+|---|---|---|
+| **always the underdog** | **34.3%** | **6.9×** |
+| lean underdogs (30% favs) | 27.2% | 5.4× |
+| coin flip | 20.5% | 4.1× |
+| pick like everyone else | 4.9% | 1.0× |
+| always the favorite | 0.1% | 0.0× |
+
+The lesson is *not* "underdogs are undervalued". It is that **sharing the
+field's coin flip is what costs you**. Any consistent rule away from the
+field's centre does several times better. The underdog side wins the tiebreak
+only because favorites cover **48.89%** of decided games (n=6,793) — so fading
+costs nothing in accuracy and may gain a little.
+
+Two things this depends on:
+
+- **It is sensitive to the crowd being wrong.** If the crowd's side covers 52%
+  rather than 48.9%, fading stops helping; at 54% it hurts. The measured 48.89%
+  is what makes it safe, and it is worth re-checking.
+- **It assumes winner-take-all.** If your pool pays 2nd and 3rd, fade less.
+
+## The policy
+
+```
+pool line differs from the market  ->  take the side it favours,
+   (a real, measured accuracy edge)     whatever the crowd is doing
+
+lines agree                        ->  take the side the pool is
+   (a coin flip on accuracy)            least likely to be on
+```
+
+Simulation put the threshold at **0.5 points**: take every line edge you find,
+higher thresholds did worse.
 
 ## Usage
 
@@ -57,12 +128,16 @@ So the strategy is:
 pip install -r requirements.txt
 python3 scripts/fetch_data.py          # nflverse schedule, results, market lines
 python3 scripts/calibrate_edge.py      # rebuild the edge table (optional)
+
+# only if you want to re-run the research that produced the findings above
+python3 scripts/fetch_data.py --team-stats
+python3 scripts/research_market_efficiency.py
 ```
 
 Thursday, in two steps:
 
 ```bash
-# 1. capture the pool's lines — pick whichever works
+# 1. capture the pool's lines — whichever works
 python3 scripts/pool_lines.py --live                  # scrape (needs .env)
 python3 scripts/pool_lines.py --html saved_page.html  # a page saved from the browser
 python3 scripts/pool_lines.py --text lines.txt        # pasted text; always works
@@ -72,16 +147,17 @@ python3 scripts/make_picks.py --csv picks.csv
 ```
 
 ```
-EDGES — pool line differs from the market (5 games)
+LINE EDGE — the pool's number differs from the market (2)
+  game         pick    line  edge    win%
+  DET @ BUF    BUF     -4.5   1.0   54.1%
+  CIN @ HOU    CIN     +3.0   0.5   52.3%
 
-  game         pick     line  market  edge    win%
-  ----------------------------------------------------
-  NO @ BAL     BAL      -5.5    +8.5   3.0   60.1%
-  JAX @ DEN    JAX      +4.0    +2.5   1.5   55.7%
+FADE THE FIELD — lines agree, so take the unpopular side (14)
+  game         pick    line  pool on you
+  NO @ BAL     NO      +8.5          18%
+  MIA @ SF     MIA    +13.5           8%
   ...
-
-NO EDGE — lines agree, these are coin flips (11 games)
-  CIN @ HOU    HOU       +2.5   coin flip (lines agree)
+  average share of the pool on your side: 30% — lower is better here
 ```
 
 For the paste route, anything readable works — `NE -3.5 BUF`,
@@ -95,13 +171,17 @@ src/weekly_picks/
   schedule.py     nflverse schedule, results and market lines
   calibration.py  what a point of line discrepancy is worth, from history
   edge.py         pool line vs market line -> a side and a win probability
+  crowd.py        what share of the pool takes each side
+  recommend.py    the policy: line edges first, fade the field otherwise
   teams.py        free-text team names -> nflverse codes
   pool/
     client.py     login and fetch (login form discovered, not hardcoded)
-    parse.py      sheet HTML or pasted text -> lines
+    poolhost.py   PoolHost's sheet, matched to their real markup
+    parse.py      generic sheet / pasted text -> lines
     models.py     PoolLine / PoolSheet
-scripts/          fetch_data, calibrate_edge, pool_lines, make_picks
-tests/            55 tests, including guards on the upstream sign convention
+scripts/          fetch_data, calibrate_edge, pool_lines, make_picks,
+                  research_market_efficiency (reproduces the negative result)
+tests/            82 tests, including guards on the upstream sign convention
 ```
 
 ### Conventions
@@ -119,53 +199,27 @@ overprices the home team and the away side is the play. `tests/test_schedule.py`
 asserts this against the real file, so if nflverse ever flips it the tests fail
 instead of every pick silently inverting.
 
-## How big is the edge in practice?
-
-Smaller than the table above might suggest. On the first real sheet read
-(2026 week 2), **14 of 16 pool lines matched the market exactly**:
-
-| game | pool | market | edge |
-|---|---|---|---|
-| DET @ BUF | BUF −4.5 | BUF −5.5 | 1.0 |
-| CIN @ HOU | HOU −3.0 | HOU −2.5 | 0.5 |
-| the other 14 | — | — | 0 |
-
-1.5 points of edge across the whole slate, worth about +0.06 expected wins.
-PoolHost is clearly pulling a real market feed rather than setting lines by
-hand and leaving them, so the gap is line *movement* since the sheet posted,
-not a lazy number.
-
-That is one week, and it is the wrong week to judge from: the market moves most
-between Thursday and Sunday, and this comparison was made on Thursday. The
-honest read is that the edge is real but thin, and its size is an open
-empirical question.
-
-**Measuring it properly is the next step and it is nearly free.** Each captured
-sheet is committed to `data/pool/`, and nflverse's `spread_line` becomes the
-*closing* line once a game is played. So after a few weeks, pool line vs.
-closing line can be graded directly — no extra data collection needed, just
-time.
-
 ## Status
 
-Working end to end, 64 tests passing.
+Working end to end, 82 tests passing.
 
 - **The sheet parser is verified** against a real PoolHost sheet — all 16 games,
   correctly oriented. It reads each team from its logo filename
-  (`/images/teamlogos/BUF.png`) rather than its display text, which matters
-  because PoolHost writes the New York and Los Angeles teams as `New York (A)`
-  / `New York (N)`, and uses `AZ`, `JAC` and `LAR` where nflverse uses `ARI`,
-  `JAX` and `LA`.
+  (`/images/teamlogos/BUF.png`) rather than display text, because PoolHost
+  writes the New York and Los Angeles teams as `New York (A)` / `New York (N)`
+  and uses `AZ`, `JAC`, `LAR` where nflverse uses `ARI`, `JAX`, `LA`.
 - **The login flow is not verified.** `poolhost.com` is blocked from the
   environment this was built in, so `client.py` has never authenticated. The
-  form is discovered at runtime rather than hardcoded, which should survive a
-  template change, but it needs one real run. `--html` and `--text` both work
-  today regardless.
+  form is discovered at runtime rather than hardcoded, but it needs one real
+  run. `--html` and `--text` work regardless.
+- **The crowd model is a prior, not a measurement.** `crowd.py` assumes the
+  field takes the favorite on a logistic curve in the spread (63% at −3, 86% at
+  −10). PoolHost publishes a **Pick Distribution** page — feeding a few weeks of
+  that into `CrowdModel.fit()` replaces the guess with your pool's actual
+  behaviour. This is the highest-value thing left to do: the whole fade strategy
+  is sized off this number.
+- **Pool size and payout structure are unmodelled.** The simulation assumes 20
+  entrants, winner-take-all.
 - **The market line is nflverse's consensus**, not a live intraday quote. If
-  the two sources turn out to refresh on similar schedules, some of the 14/16
-  agreement above is them agreeing with each other rather than the pool being
-  sharp — a real-time odds feed would settle that.
-- **No margin model yet.** EPA/play, Elo and rest are the obvious inputs, and
-  the sibling survivor-pool project already has providers for all three. Given
-  how many games come back with no line discrepancy, this matters more than it
-  looked at the start: 14 of 16 games this week were coin flips.
+  both sources refresh on similar schedules, some of that 14/16 agreement is
+  them agreeing with each other rather than the pool being sharp.
