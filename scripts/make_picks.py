@@ -9,10 +9,10 @@ not the same kind of claim:
 
   * LINE EDGE — the pool's number differs from the market's. This is a real,
     measured accuracy edge and the size of it is known.
-  * FADE — the lines agree, so accuracy is a coin flip. The pick goes to the
-    side the rest of the pool is least likely to be on, because in a
-    best-record-wins pool, differentiation is worth far more than a hit rate
-    you cannot actually raise. See scripts/research_market_efficiency.py.
+  * UNDERDOG RULE — the lines agree, so there is no discrepancy to exploit.
+    The pick goes to the underdog, which covers 51.1% of decided games overall
+    and 53.7% for early-season road dogs. Small, but measured in both halves of
+    the sample. See scripts/research_factors.py.
 """
 
 import _bootstrap  # noqa: F401
@@ -80,22 +80,21 @@ def main() -> None:
         print()
 
     if fades:
-        print(f"FADE THE FIELD — lines agree, so take the unpopular side ({len(fades)})\n")
-        print(f"  {'game':<12} {'pick':<5} {'line':>6} {'pool on you':>12}")
-        print(f"  {'-' * 40}")
+        print(f"UNDERDOG RULE — lines agree, so take the dog ({len(fades)})\n")
+        print(f"  {'game':<12} {'pick':<5} {'line':>6} {'win%':>7}  {'why':<26}")
+        print(f"  {'-' * 62}")
         for p in fades:
             line = "" if p.line is None else f"{p.line:>+6.1f}"
             print(f"  {p.away_team + ' @ ' + p.home_team:<12} {p.pick:<5} {line} "
-                  f"{p.crowd_share * 100:>11.0f}%")
+                  f"{p.win_prob * 100:>6.1f}%  {p.reason:<26}")
 
-    mean_share = frame["crowd_share"].mean() if len(frame) else 0.5
     expected = frame["win_prob"].sum()
+    rate = expected / len(frame) if len(frame) else 0.5
     print(f"\n{'-' * 78}")
-    print(f"  games {len(frame)}   line edges {len(edges)}   fades {len(fades)}")
-    print(f"  expected record {expected:.1f}-{len(frame) - expected:.1f} "
-          f"(fades counted at 50%, which is what they are)")
-    print(f"  average share of the pool on your side: {mean_share * 100:.0f}% "
-          f"— lower is better here")
+    print(f"  games {len(frame)}   line edges {len(edges)}   underdog rule {len(fades)}")
+    print(f"  expected record {expected:.1f}-{len(frame) - expected:.1f}  ({rate * 100:.1f}%)")
+    print(f"  average share of the pool on your side: "
+          f"{frame['crowd_share'].mean() * 100:.0f}%")
     print(f"{'-' * 78}\n")
 
     if args.csv:

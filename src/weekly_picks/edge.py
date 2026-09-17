@@ -58,6 +58,8 @@ def compare(sheet: PoolSheet, market: pd.DataFrame, calibration: EdgeCalibration
         rows.append(
             {
                 "game_id": game.game_id,
+                "season": game.season,
+                "week": game.week,
                 "kickoff": game.kickoff,
                 "away_team": game.away_team,
                 "home_team": game.home_team,

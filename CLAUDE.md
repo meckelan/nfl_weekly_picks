@@ -3,8 +3,19 @@
 ## What this is
 
 A season-long ATS pick'em pool run on poolhost.com: every player picks a side
-against the spread in every game, every week. Best record over the season wins.
-Picks are made **Thursday afternoon**, all at once, before the first kickoff.
+against the spread in every game, every week. Picks are made **Thursday
+afternoon**, all at once, before the first kickoff.
+
+## The objective is accuracy, not winning outright
+
+There is **no money and no prize** — it is bragging rights among extended
+family. The stated goal is "finish above 50% for the season".
+
+That matters, because it rules out a whole class of strategy. Optimising the
+chance of finishing *first* favours being decorrelated from the field (see the
+simulation below, kept for reference). Optimising your *hit rate* favours
+simply being right as often as possible. They give different picks. **Optimise
+accuracy.**
 
 ## The core insight — don't lose it
 
@@ -41,7 +52,31 @@ produced two survivors at |z| > 2 where chance predicts 0.7, and both say
 
 If you are about to add a model, run that script first.
 
-## What actually wins the pool: differentiation
+## What actually beats 50%
+
+A 39-factor screen (`scripts/research_factors.py`), every factor built as-of,
+screened on 1999-2012 and confirmed on a held-out 2013-2025:
+
+    every dog              51.11%   [99-12 51.19% | 13-25 51.03%]
+    road dogs              51.67%   [99-12 51.79% | 13-25 51.54%]
+    dogs, weeks 1-4        53.05%   [99-12 52.74% | 13-25 53.36%]
+    road dogs, weeks 1-4   53.70%   [99-12 53.38% | 13-25 54.02%]
+
+Era consistency is the evidence that matters here, not the z-score — screening
+39 factors at z>2 yields about one false positive by chance. These four read
+the same in two independent 13-year halves, and they have a mechanism: the
+public likes favorites and home teams, books shade those lines, and the
+shading comes out of the favorite's side.
+
+Nothing else survived: turnover-luck regression, blowout overreaction, ATS
+streaks, bye weeks, weather, totals, EPA-vs-record divergence, backup QBs.
+
+Blended over a 272-pick season the rule is worth about **52%**, which is a
+~73% chance of finishing above .500 versus ~48% for coin-flipping. The
+season-to-season swing is ~8 games (1 SD), so this tilts the odds rather than
+deciding anything.
+
+## Reference only: differentiation (wrong objective here)
 
 Best-record-wins pays the MAXIMUM, not the mean. Picking by the same process
 as the field earns a fair share of the pot and nothing more. Simulated, 20
@@ -52,13 +87,10 @@ entrants, field at 85% favorites, nobody with an edge:
     pick like everyone else   4.9%   (1.0x)
     always the favorite       0.1%
 
-The lesson is not "dogs are undervalued" — it is that sharing the field's coin
-flip is what costs you. The dog side wins the tiebreak only because favorites
-cover 48.89% of decided games (n=6,793), so fading is free.
-
-Sensitive: if the crowd's side covered 52% instead, fading stops helping; at
-54% it hurts. And it assumes winner-take-all — fade less if the pool pays
-places.
+This is real, but it optimises P(finish first), which is **not** this pool's
+objective. Kept because the analysis is sound and `crowd.py` still reports
+crowd share, and because it would become the right strategy if the pool ever
+had a prize. Do not let it drive picks.
 
 ## Conventions
 
@@ -122,17 +154,15 @@ it carries the username and pool name).
   captured — enough to *submit* picks programmatically later, which is not
   built and should not be without asking first.
 
-## The highest-value thing left
+## The policy
 
-`crowd.py` models what share of the pool takes the favorite, and the entire
-fade strategy is sized off it — but it is currently a **prior** (logistic in
-the spread, 63% at −3, 86% at −10), not a measurement. PoolHost publishes a
-**Pick Distribution** page. Feed a few weeks of it into `CrowdModel.fit()` and
-the guess becomes your pool's real behaviour. Do this before tuning anything
-else.
+    line edge >= 0.5 pts  ->  take that side (52.3% at 0.5, 60.1% at 3.0)
+    otherwise             ->  take the underdog, at the best-matching rate:
+                              early-season road dog 53.7% / early dog 53.0%
+                              / road dog 51.7% / any dog 51.1%
 
 ## Status
 
-Working end to end, 82 tests passing. Outstanding: the login flow has never run
-against the live site (the sheet parser has, and is verified); the crowd model
-is un-calibrated; pool size and payout structure are unmodelled.
+Working end to end, 86 tests passing. Outstanding: the login flow has never run
+against the live site (the sheet parser has, and is verified); grading captured
+sheets against closing lines once a few weeks accumulate.

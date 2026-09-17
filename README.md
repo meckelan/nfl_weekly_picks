@@ -9,9 +9,8 @@ Short version of what the data says:
 1. **You cannot out-predict the closing spread.** Measured, not assumed.
 2. **The pool's line sometimes lags the market.** That gap is a real edge, but
    it is thin — 2 of 16 games in the first week checked.
-3. **What actually wins a best-record pool is not being right, it is being
-   different.** This is the big lever, and it is worth more than any
-   handicapping edge you could realistically get.
+3. **Underdogs cover 51.1% of decided games**, and early-season road dogs
+   53.7% — the only factors out of 39 screened that hold up in a held-out era.
 
 ## 1. The market is efficient
 
@@ -80,47 +79,58 @@ gap is only movement since posting.
 
 Regenerate the table with `scripts/calibrate_edge.py`.
 
-## 3. Differentiation is the real lever
+## 3. Underdogs cover a little more than half
 
-A best-record-wins pool pays the **maximum**, not the mean. Picking by the same
-process as everyone else earns a fair share of the pot and nothing more.
+A 39-factor screen (`scripts/research_factors.py`). Every factor is built
+as-of, screened on **1999-2012**, then confirmed on a held-out **2013-2025**
+the screen never saw:
 
-Simulated: 20 entrants, a field that takes the favorite 85% of the time, nobody
-with any real edge.
+| rule (take the underdog) | n | hit% | 1999-2012 | 2013-2025 |
+|---|---|---|---|---|
+| every dog | 6,793 | 51.11% | 51.19% | 51.03% |
+| road dogs | 4,368 | 51.67% | 51.79% | 51.54% |
+| dogs, weeks 1-4 | 1,640 | 53.05% | 52.74% | 53.36% |
+| **road dogs, weeks 1-4** | 1,067 | **53.70%** | 53.38% | 54.02% |
 
-| your strategy | win rate | vs. 5% fair share |
-|---|---|---|
-| **always the underdog** | **34.3%** | **6.9×** |
-| lean underdogs (30% favs) | 27.2% | 5.4× |
-| coin flip | 20.5% | 4.1× |
-| pick like everyone else | 4.9% | 1.0× |
-| always the favorite | 0.1% | 0.0× |
+The evidence here is the **era consistency**, not the z-score: screening 39
+factors at z > 2 throws off about one false positive by chance, so a single
+significant slice proves nothing. These four read the same across two
+independent 13-year halves, and there is a mechanism — the public likes
+favorites and home teams, books shade those lines, and the shading comes out of
+the favorite's side. Early-season dogs do best, which fits: the market has the
+least information in September and the public leans hardest on last year's
+reputations.
 
-The lesson is *not* "underdogs are undervalued". It is that **sharing the
-field's coin flip is what costs you**. Any consistent rule away from the
-field's centre does several times better. The underdog side wins the tiebreak
-only because favorites cover **48.89%** of decided games (n=6,793) — so fading
-costs nothing in accuracy and may gain a little.
+**Nothing else survived.** Turnover-luck regression, blowout overreaction, ATS
+streaks, bye weeks, cold, wind, totals, EPA-vs-record divergence, backup
+quarterbacks — all noise.
 
-Two things this depends on:
+## What it adds up to
 
-- **It is sensitive to the crowd being wrong.** If the crowd's side covers 52%
-  rather than 48.9%, fading stops helping; at 54% it hurts. The measured 48.89%
-  is what makes it safe, and it is worth re-checking.
-- **It assumes winner-take-all.** If your pool pays 2nd and 3rd, fade less.
+Blended over a 272-pick season:
+
+| strategy | blended | expected | P(finish above .500) |
+|---|---|---|---|
+| coin flip / take favorites | 50.00% | 136.0-136.0 | 48% |
+| always take the underdog | 51.11% | 139.0-133.0 | 62% |
+| **the rule below** | **51.99%** | **141.4-130.6** | **73%** |
+
+A season swings ~8 games on luck alone (1 SD), so a 2-point edge is about a
+quarter of a standard deviation. It tilts the odds. It does not decide the
+season.
 
 ## The policy
 
 ```
-pool line differs from the market  ->  take the side it favours,
-   (a real, measured accuracy edge)     whatever the crowd is doing
+pool line differs from the market  ->  take that side
+   (52.3% at 0.5 pts, 60.1% at 3)
 
-lines agree                        ->  take the side the pool is
-   (a coin flip on accuracy)            least likely to be on
+otherwise, take the underdog at the best-matching rate:
+   early-season road dog   53.7%
+   early-season dog        53.0%
+   road dog                51.7%
+   any dog                 51.1%
 ```
-
-Simulation put the threshold at **0.5 points**: take every line edge you find,
-higher thresholds did worse.
 
 ## Usage
 
@@ -171,8 +181,8 @@ src/weekly_picks/
   schedule.py     nflverse schedule, results and market lines
   calibration.py  what a point of line discrepancy is worth, from history
   edge.py         pool line vs market line -> a side and a win probability
-  crowd.py        what share of the pool takes each side
-  recommend.py    the policy: line edges first, fade the field otherwise
+  crowd.py        what share of the pool takes each side (reporting only)
+  recommend.py    the policy: line edges first, underdog rule otherwise
   teams.py        free-text team names -> nflverse codes
   pool/
     client.py     login and fetch (login form discovered, not hardcoded)
@@ -180,8 +190,9 @@ src/weekly_picks/
     parse.py      generic sheet / pasted text -> lines
     models.py     PoolLine / PoolSheet
 scripts/          fetch_data, calibrate_edge, pool_lines, make_picks,
-                  research_market_efficiency (reproduces the negative result)
-tests/            82 tests, including guards on the upstream sign convention
+                  research_market_efficiency (no model beats the spread),
+                  research_factors (39-factor screen, held-out era)
+tests/            86 tests, including guards on the upstream sign convention
 ```
 
 ### Conventions
@@ -201,7 +212,7 @@ instead of every pick silently inverting.
 
 ## Status
 
-Working end to end, 82 tests passing.
+Working end to end, 86 tests passing.
 
 - **The sheet parser is verified** against a real PoolHost sheet — all 16 games,
   correctly oriented. It reads each team from its logo filename
@@ -212,14 +223,12 @@ Working end to end, 82 tests passing.
   environment this was built in, so `client.py` has never authenticated. The
   form is discovered at runtime rather than hardcoded, but it needs one real
   run. `--html` and `--text` work regardless.
-- **The crowd model is a prior, not a measurement.** `crowd.py` assumes the
-  field takes the favorite on a logistic curve in the spread (63% at −3, 86% at
-  −10). PoolHost publishes a **Pick Distribution** page — feeding a few weeks of
-  that into `CrowdModel.fit()` replaces the guess with your pool's actual
-  behaviour. This is the highest-value thing left to do: the whole fade strategy
-  is sized off this number.
-- **Pool size and payout structure are unmodelled.** The simulation assumes 20
-  entrants, winner-take-all.
+- **The edges are small and were found by screening.** ~+2 points of win rate.
+  The defence is era-consistency and a plausible mechanism, not a big z-score.
+  Treat a losing month as noise, not as the rule breaking.
+- **`crowd.py` is reporting only.** It estimates what share of the pool takes
+  each side. That would matter if the pool had a prize and you were optimising
+  for first place rather than for accuracy; it does not drive picks.
 - **The market line is nflverse's consensus**, not a live intraday quote. If
   both sources refresh on similar schedules, some of that 14/16 agreement is
   them agreeing with each other rather than the pool being sharp.

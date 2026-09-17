@@ -1,30 +1,40 @@
 """Choosing a side for every game.
 
-Two findings drive this, both measured rather than assumed (see
-`scripts/research_market_efficiency.py`):
+The goal is a season record above .500, so this optimises **accuracy** and
+nothing else. (An earlier version optimised the chance of finishing first,
+which favours being different from the field rather than being right. Those
+are different objectives and they give different picks.)
 
-1. **You cannot out-predict the closing spread.** Elo and rolling EPA/play
-   correlate 0.84 and 0.78 with the market's own number — they mostly
-   re-derive it — and a walk-forward model of the residual hit 50.2% over
-   4,135 out-of-sample games. There is no margin model here because the
-   evidence does not support one.
+Two measured things to work with, in priority order:
 
-2. **Correlation with the field is the lever that actually moves a pool.**
-   Best-record-wins pays the maximum, not the mean, so picking by the same
-   process as everyone else returns a fair share of the pot. A consistent rule
-   that sits away from the field's centre does several times better.
+1. **The pool's line vs. the market's.** Where they differ you are betting into
+   a number the market itself no longer believes. Worth 52.3% at half a point,
+   60.1% at three. This is the strongest signal available, and it is
+   arithmetic rather than forecasting.
 
-So the policy is:
+2. **Underdogs cover slightly more than half the time.** Not because dogs are
+   mispriced in any deep sense — the public likes favorites and home teams, so
+   books shade those lines, and the shading comes out of the favorite's side.
+   Measured over 6,793 decided games (1999-2025), split by era so a single
+   lucky period cannot carry it:
 
-    if the pool's line differs from the market   ->  take the side that favours
-    (a real, measurable accuracy edge)               regardless of the crowd
+       every dog              51.11%   [99-12 51.19% | 13-25 51.03%]
+       road dogs              51.67%   [99-12 51.79% | 13-25 51.54%]
+       dogs, weeks 1-4        53.05%   [99-12 52.74% | 13-25 53.36%]
+       road dogs, weeks 1-4   53.70%   [99-12 53.38% | 13-25 54.02%]
 
-    otherwise                                    ->  take the side the field is
-    (a coin flip on accuracy)                        least likely to be on
+   Early-season dogs do best, which is what you would expect: the market has
+   the least information in September and the public leans hardest on last
+   year's reputations.
 
-Fading costs nothing in accuracy here: underdogs cover 51.1% of decided games
-against 48.9% for favorites (1999-2025), so the contrarian side is, if
-anything, marginally the better one.
+What did *not* survive a 39-factor screen with a held-out era:
+turnover-luck regression, blowout overreaction, ATS streaks, bye weeks,
+weather, totals, EPA-vs-record divergence, backup quarterbacks. See
+`scripts/research_factors.py`. And no margin model survived at all — see
+`scripts/research_market_efficiency.py`.
+
+These edges are small: about +2 points of win rate, against a season-to-season
+swing of ~8 games. They tilt the odds, they do not decide the season.
 """
 
 from __future__ import annotations
@@ -35,10 +45,18 @@ import pandas as pd
 
 from .crowd import CrowdModel
 
-# Below this many points the discrepancy is not worth surrendering
-# differentiation for. Chosen by simulation: taking every edge from 0.5 points
-# up beat every higher threshold.
+# Below this, the line discrepancy is worth less than the underdog rule.
 MIN_EDGE = 0.5
+
+EARLY_SEASON_WEEKS = 4
+
+# Measured hit rates, taking the underdog. Checked in both halves of the
+# sample; see scripts/research_factors.py for the screen that produced them.
+RATE_EARLY_ROAD_DOG = 0.5370
+RATE_EARLY_DOG = 0.5305
+RATE_ROAD_DOG = 0.5167
+RATE_ANY_DOG = 0.5111
+RATE_COIN_FLIP = 0.5000
 
 
 @dataclass
@@ -49,20 +67,25 @@ class Recommendation:
     pick: str
     line: float | None          # the pool's number from the picked side
     reason: str
-    win_prob: float             # accuracy estimate; 0.5 when it is a coin flip
+    win_prob: float
     crowd_share: float          # share of the pool expected on your side
-    edge_points: float          # line discrepancy, 0 when the lines agree
+    edge_points: float
 
     @property
     def differentiation(self) -> float:
-        """Share of the pool expected to be on the *other* side."""
         return 1.0 - self.crowd_share
 
 
-def _favorite(spread: float, home_team: str, away_team: str) -> str | None:
-    if spread == 0:
-        return None
-    return home_team if spread > 0 else away_team
+def underdog_rule(week: int | None, dog_is_road: bool) -> tuple[float, str]:
+    """The measured hit rate for taking this underdog, and what to call it."""
+    early = week is not None and week <= EARLY_SEASON_WEEKS
+    if early and dog_is_road:
+        return RATE_EARLY_ROAD_DOG, "early-season road underdog"
+    if early:
+        return RATE_EARLY_DOG, "early-season underdog"
+    if dog_is_road:
+        return RATE_ROAD_DOG, "road underdog"
+    return RATE_ANY_DOG, "underdog"
 
 
 def recommend(
@@ -70,7 +93,7 @@ def recommend(
     crowd: CrowdModel | None = None,
     min_edge: float = MIN_EDGE,
 ) -> list[Recommendation]:
-    """Turn a pool-vs-market comparison into a pick for every game."""
+    """A pick for every game, best available signal first."""
     crowd = crowd or CrowdModel()
     out: list[Recommendation] = []
 
@@ -80,17 +103,20 @@ def recommend(
         edge = getattr(row, "edge_points", None)
         edge = 0.0 if edge is None or pd.isna(edge) else float(edge)
 
-        # The number the crowd reacts to is the one on their sheet.
+        # The pool's number is the one the game settles against.
         reference = pool_spread if pd.notna(pool_spread) else market_spread
         if reference is None or pd.isna(reference):
             continue
         reference = float(reference)
 
-        favorite = _favorite(reference, row.home_team, row.away_team)
-        underdog = (
-            row.away_team if favorite == row.home_team
-            else row.home_team if favorite == row.away_team
-            else None
+        week = getattr(row, "week", None)
+        week = int(week) if week is not None and pd.notna(week) else None
+
+        favorite = None if reference == 0 else (
+            row.home_team if reference > 0 else row.away_team
+        )
+        underdog = None if favorite is None else (
+            row.away_team if favorite == row.home_team else row.home_team
         )
 
         if edge >= min_edge and pd.notna(getattr(row, "pick", None)):
@@ -99,14 +125,10 @@ def recommend(
             reason = f"line edge {edge:g} pts"
         elif underdog is not None:
             pick = underdog
-            win_prob = 0.5
-            reason = "fade the field (underdog)"
+            win_prob, reason = underdog_rule(week, dog_is_road=(underdog == row.away_team))
         else:
-            # A true pick'em: no favorite, so no crowd to fade. Take the home
-            # side and mark it as the coin flip it is.
             pick = row.home_team
-            win_prob = 0.5
-            reason = "pick'em — no edge either way"
+            win_prob, reason = RATE_COIN_FLIP, "pick'em — nothing to go on"
 
         line = None
         if pd.notna(pool_spread):
