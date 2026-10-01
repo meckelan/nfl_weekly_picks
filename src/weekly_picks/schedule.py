@@ -19,6 +19,7 @@ from __future__ import annotations
 import shutil
 import urllib.request
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -98,8 +99,14 @@ def current_week(games: pd.DataFrame, season: int, now: pd.Timestamp | None = No
 
     A week stays 'current' until its last game has kicked off, so a Thursday
     run picks the week that starts that evening.
+
+    `gametime` in the schedule is US Eastern, so "now" has to be Eastern too.
+    Comparing against a UTC clock rolled the week over four hours early, which
+    lands exactly on Thursday and Monday night kickoffs. `now`, if passed, is
+    taken as naive Eastern.
     """
-    now = pd.Timestamp.now() if now is None else now
+    if now is None:
+        now = pd.Timestamp.now(tz=ZoneInfo("America/New_York")).tz_localize(None)
     season_games = games[games["season"] == season]
     if season_games.empty:
         raise ValueError(f"no games found for season {season}")

@@ -46,18 +46,22 @@ def main() -> None:
     season = args.season or int(games[games["kickoff"].notna()]["season"].max())
     week = args.week or current_week(games, season)
 
-    sheet_path = POOL_DIR / f"{season}_wk{week:02d}.json"
-    if not sheet_path.exists():
-        raise SystemExit(
-            f"no pool sheet at {sheet_path}\n"
-            f"capture one first:  python3 scripts/pool_lines.py --week {week} --live"
-        )
-
-    sheet = PoolSheet.from_dict(json.loads(sheet_path.read_text()))
     calibration = EdgeCalibration.load()
     crowd = CrowdModel(slope=args.crowd_slope) if args.crowd_slope else CrowdModel()
+    market = market_lines(games, season, week)
 
-    table = compare(sheet, market_lines(games, season, week), calibration)
+    sheet_path = POOL_DIR / f"{season}_wk{week:02d}.json"
+    have_sheet = sheet_path.exists()
+    if have_sheet:
+        sheet = PoolSheet.from_dict(json.loads(sheet_path.read_text()))
+        captured = sheet.captured_at or "n/a"
+    else:
+        # The underdog rule only needs the market line, so a missing sheet costs
+        # the line-edge comparison and nothing else. Worth running anyway.
+        sheet = PoolSheet(season=season, week=week, source="none — market lines only")
+        captured = "NO POOL SHEET"
+
+    table = compare(sheet, market, calibration)
     picks = recommend(table, crowd=crowd, min_edge=args.min_edge)
     frame = to_frame(picks)
 
@@ -65,9 +69,14 @@ def main() -> None:
     fades = [p for p in picks if p.edge_points < args.min_edge]
 
     print(f"\n{'=' * 78}")
-    print(f"  {season} WEEK {week}   sheet captured {sheet.captured_at or 'n/a'}")
+    print(f"  {season} WEEK {week}   pool sheet: {captured}")
     print(f"  crowd model: {'fitted, n=' + str(crowd.observations) if crowd.calibrated else 'prior (not yet fitted to your pool)'}")
     print(f"{'=' * 78}\n")
+
+    if not have_sheet:
+        print("  No pool sheet for this week, so line edges cannot be checked —")
+        print("  every pick below comes from the underdog rule off the market line.")
+        print(f"  To add them:  python3 scripts/pool_lines.py --week {week} --html <saved page>\n")
 
     if edges:
         print(f"LINE EDGE — the pool's number differs from the market ({len(edges)})\n")

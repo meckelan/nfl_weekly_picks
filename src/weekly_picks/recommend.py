@@ -130,9 +130,10 @@ def recommend(
             pick = row.home_team
             win_prob, reason = RATE_COIN_FLIP, "pick'em — nothing to go on"
 
-        line = None
-        if pd.notna(pool_spread):
-            line = -float(pool_spread) if pick == row.home_team else float(pool_spread)
+        # The number the pick lays or takes. Prefer the pool's own line, since
+        # that is what the game settles against; fall back to the market's when
+        # no sheet has been captured, so the pick is still readable.
+        line = -reference if pick == row.home_team else reference
 
         out.append(
             Recommendation(

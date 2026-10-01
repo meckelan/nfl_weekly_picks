@@ -89,6 +89,12 @@ def test_games_without_any_line_are_skipped():
     assert recommend(row(pool_spread=None, market_spread=None)) == []
 
 
+def test_line_falls_back_to_the_market_when_no_sheet_was_captured():
+    rec = recommend(row(pool_spread=None, market_spread=6.0))[0]
+    assert rec.pick == "NE"                 # BUF favored by 6, NE is the dog
+    assert rec.line == pytest.approx(6.0)   # New England taking 6
+
+
 def test_crowd_share_is_still_reported():
     rec = recommend(row(pool_spread=10.0, market_spread=10.0))[0]
     assert rec.crowd_share < 0.2            # taking the dog is the unpopular side
