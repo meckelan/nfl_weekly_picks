@@ -56,6 +56,7 @@ class PoolHostClient:
         self.password = password or os.environ.get("POOLHOST_PASSWORD", "")
         self.login_url = login_url or os.environ.get("POOLHOST_LOGIN_URL") or self.url
         self.timeout = timeout
+        self.last_url = ""
 
         if not self.url:
             raise ValueError("set POOLHOST_URL (or pass url=) to the pool's picks page")
@@ -136,10 +137,16 @@ class PoolHostClient:
 
     # ── fetching ─────────────────────────────────────────────────────────────
     def fetch(self, url: str | None = None, *, archive: bool = True) -> str:
-        """Fetch a page, optionally archiving the raw HTML."""
+        """Fetch a page, optionally archiving the raw HTML.
+
+        The URL actually landed on is kept in `last_url`: a silent redirect to
+        a login or pool-selection page is the most common reason a scrape comes
+        back with no games in it.
+        """
         target = url or self.url
         response = self.session.get(target, timeout=self.timeout)
         response.raise_for_status()
+        self.last_url = response.url
         if archive:
             self.archive(response.text)
         return response.text

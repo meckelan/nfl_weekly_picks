@@ -21,7 +21,7 @@ import json
 import sys
 from pathlib import Path
 
-from weekly_picks.pool import PoolSheet, parse_sheet, parse_text
+from weekly_picks.pool import ParseError, PoolSheet, parse_sheet, parse_text
 from weekly_picks.schedule import current_week, load_games
 
 POOL_DIR = Path(__file__).resolve().parents[1] / "data" / "pool"
@@ -44,14 +44,37 @@ def main() -> None:
 
     if args.live:
         from weekly_picks.pool.client import PoolHostClient
+        from weekly_picks.pool.poolhost import describe_page
 
         client = PoolHostClient(url=args.url)
+        login_note = "reported success"
         try:
             client.login()
         except Exception as exc:                                  # noqa: BLE001
+            login_note = f"FAILED — {exc}"
             print(f"login failed ({exc}); trying the page unauthenticated", file=sys.stderr)
+
         html = client.fetch()
-        lines, origin = parse_sheet(html), client.url
+        try:
+            lines = parse_sheet(html)
+        except ParseError as exc:
+            # Nearly always "we were handed the wrong page" rather than a
+            # parsing bug, so say which page. login() can only check that no
+            # password box came back, which a site whose login lives on its
+            # own page will pass while still being logged out.
+            print(f"\n{exc}\n", file=sys.stderr)
+            print(f"  login         : {login_note}", file=sys.stderr)
+            print(describe_page(html, client.last_url), file=sys.stderr)
+            print(
+                "\nIf 'password input' says YES, or the fetched url is not the picks\n"
+                "page, the session is not authenticated — check POOLHOST_USERNAME and\n"
+                "POOLHOST_PASSWORD, and set POOLHOST_LOGIN_URL if the login form lives\n"
+                "on a different page. If div.game-box is 0 on a page that looks right,\n"
+                "the sheet markup changed and the parser needs updating.",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        origin = client.url
     elif args.html:
         lines, origin = parse_sheet(args.html.read_text(encoding="utf-8")), str(args.html)
     else:

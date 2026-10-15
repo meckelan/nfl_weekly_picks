@@ -61,3 +61,26 @@ def test_detected_and_routed_automatically(lines):
 
 def test_generic_sheets_are_not_mistaken_for_poolhost():
     assert not looks_like_poolhost("<table><tr><td>Green Bay</td><td>-6.5</td></tr></table>")
+
+
+# ── diagnostics ──────────────────────────────────────────────────────────────
+def test_describe_page_identifies_a_login_page():
+    from weekly_picks.pool.poolhost import describe_page
+
+    report = describe_page(
+        '<html><head><title>PoolHost - Login</title></head><body>'
+        '<form action="/login.asp"><input name="u"><input type="password" name="p">'
+        '</form></body></html>',
+        "https://www.poolhost.com/login.asp",
+    )
+    assert "this is a login page" in report
+    assert "login.asp" in report
+    assert "div.game-box  : 0" in report
+
+
+def test_describe_page_identifies_a_real_sheet():
+    from weekly_picks.pool.poolhost import describe_page
+
+    report = describe_page(FIXTURE.read_text(), "https://www.poolhost.com/profootball/picks")
+    assert "div.game-box  : 3" in report
+    assert "password input: no" in report

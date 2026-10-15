@@ -42,6 +42,45 @@ def looks_like_poolhost(html: str) -> bool:
     return "game-box" in html and "team-spread" in html
 
 
+def describe_page(html: str, url: str = "") -> str:
+    """What this page actually is, for when a parse comes back empty.
+
+    A failed scrape is almost always "we were handed the wrong page", not bad
+    parsing — so the useful thing to report is the page's identity, not a
+    stack trace. Deliberately reports shape rather than content: the sheet
+    carries the pool name and member handles, and this output goes into CI
+    logs.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "lxml")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+
+    title = soup.title.get_text(strip=True) if soup.title else "(no title)"
+    headings = [h.get_text(" ", strip=True)[:60]
+                for h in soup.find_all(["h1", "h2", "h3"])[:4]]
+    forms = [
+        f"{(f.get('action') or '(self)')[:60]}"
+        f"{' [has password]' if f.find('input', {'type': 'password'}) else ''}"
+        for f in soup.find_all("form")[:5]
+    ]
+
+    lines = [
+        f"  fetched url   : {url or '(unknown)'}",
+        f"  page title    : {title}",
+        f"  bytes         : {len(html):,}",
+        f"  div.game-box  : {len(soup.select('div.game-box'))}",
+        f"  div.team      : {len(soup.select('div.team'))}",
+        f"  .team-spread  : {len(soup.select('.team-spread'))}",
+        f"  <table>       : {len(soup.find_all('table'))}",
+        f"  password input: {'YES — this is a login page' if soup.find('input', {'type': 'password'}) else 'no'}",
+        f"  headings      : {headings or '(none)'}",
+        f"  forms         : {forms or '(none)'}",
+    ]
+    return "\n".join(lines)
+
+
 def _team_code(block) -> str | None:
     """Prefer the logo filename; fall back to the display name."""
     image = block.select_one("img[src]")

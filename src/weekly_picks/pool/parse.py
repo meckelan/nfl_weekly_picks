@@ -243,9 +243,10 @@ def parse_sheet(html: str) -> list[PoolLine]:
     lines = _parse_rows(_rows_from_html(html))
     if not lines:
         raise ParseError(
-            "no lines found in the page. Save it with --save-html and check "
-            "whether the sheet rendered (a login wall returns a valid page "
-            "with no lines in it)."
+            "no lines found in the page — most likely the wrong page was "
+            "served (a login wall is a perfectly valid page with no games in "
+            "it). Every fetch is archived under data/pool/html/; re-parse one "
+            "with --html <file>."
         )
     return lines
 
