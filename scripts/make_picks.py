@@ -40,6 +40,8 @@ def main() -> None:
     parser.add_argument("--crowd-slope", type=float, default=None,
                         help="override the crowd model's slope (see crowd.py)")
     parser.add_argument("--csv", type=Path, default=None)
+    parser.add_argument("--markdown", type=Path, default=None,
+                        help="write a GitHub-flavoured summary, first line the title")
     args = parser.parse_args()
 
     games = load_games()
@@ -109,6 +111,67 @@ def main() -> None:
     if args.csv:
         frame.to_csv(args.csv, index=False)
         print(f"wrote {args.csv}")
+
+    if args.markdown:
+        args.markdown.write_text(
+            _markdown(season, week, edges, fades, frame, have_sheet, expected)
+        )
+        print(f"wrote {args.markdown}")
+
+
+def _markdown(season, week, edges, fades, frame, have_sheet, expected) -> str:
+    """A summary that reads well in a GitHub notification email.
+
+    The first line is the title, so a caller can split it off and use the rest
+    as the body.
+    """
+    out = [f"# {season} Week {week} picks", ""]
+
+    if not have_sheet:
+        out += [
+            "> **No pool sheet this week** — the scrape did not produce one, so "
+            "every pick below comes from the underdog rule off the market line "
+            "and line edges could not be checked.",
+            "",
+        ]
+
+    if edges:
+        out += [
+            f"### Line edges — the pool's number differs from the market ({len(edges)})",
+            "",
+            "| game | pick | line | edge | win% |",
+            "|---|---|---|---|---|",
+        ]
+        out += [
+            f"| {p.away_team} @ {p.home_team} | **{p.pick}** | "
+            f"{p.line:+g} | {p.edge_points:g} | {p.win_prob * 100:.1f}% |"
+            for p in edges
+        ]
+        out.append("")
+
+    if fades:
+        out += [
+            f"### Underdog rule — lines agree ({len(fades)})",
+            "",
+            "| game | pick | line | win% |",
+            "|---|---|---|---|",
+        ]
+        out += [
+            f"| {p.away_team} @ {p.home_team} | **{p.pick}** | "
+            f"{p.line:+g} | {p.win_prob * 100:.1f}% |"
+            for p in fades
+        ]
+        out.append("")
+
+    rate = expected / len(frame) if len(frame) else 0.5
+    out += [
+        f"**{len(frame)} games** · {len(edges)} line edge(s) · "
+        f"{len(fades)} underdog rule",
+        "",
+        f"Expected record **{expected:.1f}-{len(frame) - expected:.1f}** "
+        f"({rate * 100:.1f}%).",
+    ]
+    return "\n".join(out) + "\n"
 
 
 if __name__ == "__main__":
