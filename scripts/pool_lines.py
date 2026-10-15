@@ -27,6 +27,11 @@ from weekly_picks.schedule import current_week, load_games
 POOL_DIR = Path(__file__).resolve().parents[1] / "data" / "pool"
 
 
+def _fingerprint(sheet: PoolSheet) -> set[tuple[str, str, float]]:
+    """The lines themselves, ignoring when and where they were captured."""
+    return {(line.favorite, line.underdog, line.points) for line in sheet.lines}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
@@ -88,9 +93,23 @@ def main() -> None:
 
     POOL_DIR.mkdir(parents=True, exist_ok=True)
     out = POOL_DIR / f"{season}_wk{week:02d}.json"
-    out.write_text(json.dumps(sheet.to_dict(), indent=2) + "\n")
 
-    print(f"{len(sheet)} lines captured for {season} week {week} -> {out}\n")
+    # Re-running must not rewrite an unchanged sheet: only captured_at would
+    # differ, which commits a line of noise every week and makes the timestamp
+    # meaningless. Left alone, captured_at reads as "when these lines were
+    # first seen", which is what matters for judging how stale they are. A
+    # genuine mid-week line move still rewrites the file.
+    unchanged = False
+    if out.exists():
+        previous = PoolSheet.from_dict(json.loads(out.read_text()))
+        unchanged = _fingerprint(previous) == _fingerprint(sheet)
+
+    if unchanged:
+        print(f"{len(sheet)} lines for {season} week {week} unchanged since "
+              f"{previous.captured_at} — leaving {out} alone\n")
+    else:
+        out.write_text(json.dumps(sheet.to_dict(), indent=2) + "\n")
+        print(f"{len(sheet)} lines captured for {season} week {week} -> {out}\n")
     for line in sheet.lines:
         points = "PK" if line.points == 0 else f"-{line.points:g}"
         print(f"  {line.favorite:>3} {points:>5}  over  {line.underdog}")
