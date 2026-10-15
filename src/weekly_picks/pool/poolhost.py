@@ -38,7 +38,19 @@ from .models import PoolLine
 # looks exactly like a parse failure. Visiting the pool's own home page (or, as
 # a fallback, the pool list) sets it.
 PICKS_PATH = "/profootball/picks"
-WARMUP_PATHS = ("/profootball/poolhome", "/mypools")
+POOL_LIST_PATH = "/mypools"
+WARMUP_PATHS = ("/profootball/poolhome", POOL_LIST_PATH)
+
+# Links in the site-wide nav, taken from a real signed-in page. Anything else
+# on the pool list is a candidate for entering a pool.
+_GLOBAL_NAV = frozenset({
+    "/home", "/home/", "/mypools", "/create-a-pool", "/joinprivatepool",
+    "/joinpublicpool", "/editprofile", "/changepassword", "/emailverification",
+    "/signout", "/faq/faqs", "/help/supportrequest", "/help/contact",
+    "/help/aboutus",
+})
+_NAV_PREFIXES = ("/nfl/", "/ncaatourney/", "/ncaawtourney/", "/worldcup/",
+                 "/womenworldcup/", "/collegebowl/", "/profootball/")
 
 _LOGO = re.compile(r"/teamlogos/([A-Za-z0-9]+)\.", re.IGNORECASE)
 _GAME_ID = re.compile(r"WeekGames\[(\d+)\]\.GameId", re.IGNORECASE)
@@ -177,6 +189,39 @@ class SheetNotFound(RuntimeError):
         self.last_url = last_url
 
 
+def _href_shape(href: str) -> str:
+    """A href with its digits masked, safe to print in a public CI log."""
+    return re.sub(r"\d+", "N", href)
+
+
+def pool_entry_candidates(html: str) -> list[str]:
+    """Links on the pool list that might select a pool.
+
+    The site-wide nav is known, so anything outside it is a candidate —
+    ordered so that the most pool-looking links are tried first.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "lxml")
+    seen, candidates = set(), []
+    for anchor in soup.find_all("a", href=True):
+        href = anchor["href"].strip()
+        if (not href or href.startswith(("javascript:", "#", "http"))
+                or href in _GLOBAL_NAV or href in seen):
+            continue
+        seen.add(href)
+        candidates.append(href)
+
+    def rank(href: str) -> tuple:
+        # An id in the path is the strongest signal: the bare /profootball/
+        # pages are nav, and we already know they redirect without a pool set.
+        has_id = bool(re.search(r"/\d+", href))
+        pool_ish = "pool" in href.lower() or "select" in href.lower()
+        return (not has_id, not pool_ish, href.startswith(_NAV_PREFIXES), len(href))
+
+    return sorted(candidates, key=rank)
+
+
 def navigate_to_sheet(client, picks_url: str | None = None) -> tuple[list[PoolLine], list[str]]:
     """Fetch the pick sheet, establishing the session's pool context if needed.
 
@@ -187,8 +232,6 @@ def navigate_to_sheet(client, picks_url: str | None = None) -> tuple[list[PoolLi
     was tried, which is what you want in a log when none of it worked.
     """
     from urllib.parse import urljoin
-
-    from bs4 import BeautifulSoup
 
     picks_url = picks_url or client.url
     base = urljoin(picks_url, "/")
@@ -211,15 +254,18 @@ def navigate_to_sheet(client, picks_url: str | None = None) -> tuple[list[PoolLi
     for path in WARMUP_PATHS:
         warm_html = attempt(urljoin(base, path))
 
-        # On the pool list, step into a pool before retrying the sheet.
-        if path == "/mypools":
-            soup = BeautifulSoup(warm_html, "lxml")
-            entries = [
-                a["href"] for a in soup.find_all("a", href=True)
-                if "/profootball/" in a["href"] and "picks" not in a["href"]
-            ]
-            if entries:
-                attempt(urljoin(base, entries[0]))
+        # On the pool list, step into a pool before retrying the sheet. The
+        # link that does this is not documented anywhere, so try the few most
+        # pool-looking ones and record every candidate's shape for the log.
+        if path == POOL_LIST_PATH:
+            candidates = pool_entry_candidates(warm_html)
+            shapes = sorted({_href_shape(h) for h in candidates})
+            trail.append(f"  pool-list candidates ({len(candidates)}): {shapes[:14]}")
+            for candidate in candidates[:4]:
+                attempt(urljoin(base, candidate))
+                lines = parse_poolhost(attempt(picks_url))
+                if lines:
+                    return lines, trail
 
         lines = parse_poolhost(attempt(picks_url))
         if lines:

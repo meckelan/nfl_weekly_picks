@@ -108,3 +108,39 @@ def test_gives_up_with_the_trail_it_walked():
     assert "/mypools" in " ".join(error.trail)
     assert error.last_html == HOME                         # kept for diagnostics
     assert "game-box=0" in " ".join(error.trail)
+
+
+# ── finding the link that selects a pool ─────────────────────────────────────
+NAV_AND_POOLS = """<html><body>
+  <a href="/home">Home</a><a href="/mypools">Switch Pools</a>
+  <a href="/signout">Log Out</a><a href="/nfl/spreads">Point Spreads</a>
+  <a href="/profootball/poolhome">Pool Home</a>
+  <a href="/profootball/poolhome/48213">The Memorial NFL Pool</a>
+  <a href="/selectpool/48213">Enter</a>
+  <a href="javascript:;">Picks</a><a href="https://twitter.com/PoolHost">x</a>
+</body></html>"""
+
+
+def test_pool_entry_candidates_prefers_links_carrying_an_id():
+    from weekly_picks.pool.poolhost import pool_entry_candidates
+
+    candidates = pool_entry_candidates(NAV_AND_POOLS)
+    assert candidates[0] in ("/selectpool/48213", "/profootball/poolhome/48213")
+    # The bare nav page is known to redirect without a pool selected, so it
+    # must not be tried before the id-bearing links.
+    assert candidates.index("/profootball/poolhome") > 1
+
+
+def test_pool_entry_candidates_drops_the_site_nav():
+    from weekly_picks.pool.poolhost import pool_entry_candidates
+
+    candidates = pool_entry_candidates(NAV_AND_POOLS)
+    for nav in ("/home", "/mypools", "/signout", "javascript:;",
+                "https://twitter.com/PoolHost"):
+        assert nav not in candidates
+
+
+def test_href_shape_masks_ids_for_public_logs():
+    from weekly_picks.pool.poolhost import _href_shape
+
+    assert _href_shape("/profootball/poolhome/48213") == "/profootball/poolhome/N"
