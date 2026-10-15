@@ -33,6 +33,13 @@ import re
 from ..teams import UnknownTeamError, resolve
 from .models import PoolLine
 
+# PoolHost scopes the sheet to a "current pool" held in the session. Landing on
+# /profootball/picks without that context silently redirects to /home, which
+# looks exactly like a parse failure. Visiting the pool's own home page (or, as
+# a fallback, the pool list) sets it.
+PICKS_PATH = "/profootball/picks"
+WARMUP_PATHS = ("/profootball/poolhome", "/mypools")
+
 _LOGO = re.compile(r"/teamlogos/([A-Za-z0-9]+)\.", re.IGNORECASE)
 _GAME_ID = re.compile(r"WeekGames\[(\d+)\]\.GameId", re.IGNORECASE)
 _SPREAD = re.compile(r"[+-]?\d+(?:\.\d+)?")
@@ -158,3 +165,66 @@ def parse_poolhost(html: str) -> list[PoolLine]:
         )
 
     return lines
+
+
+class SheetNotFound(RuntimeError):
+    """Could not reach a page with games on it. Carries the pages tried."""
+
+    def __init__(self, message: str, trail: list[str], last_html: str, last_url: str):
+        super().__init__(message)
+        self.trail = trail
+        self.last_html = last_html
+        self.last_url = last_url
+
+
+def navigate_to_sheet(client, picks_url: str | None = None) -> tuple[list[PoolLine], list[str]]:
+    """Fetch the pick sheet, establishing the session's pool context if needed.
+
+    Tries the picks page directly first, since a session that already has a
+    pool selected needs nothing else. If that comes back without games, walks
+    the warm-up paths — the pool's home page, then the pool list, following the
+    first link into a pool — and retries. Returns the lines and a trail of what
+    was tried, which is what you want in a log when none of it worked.
+    """
+    from urllib.parse import urljoin
+
+    from bs4 import BeautifulSoup
+
+    picks_url = picks_url or client.url
+    base = urljoin(picks_url, "/")
+    trail: list[str] = []
+    last_html, last_url = "", ""
+
+    def attempt(url: str) -> str:
+        nonlocal last_html, last_url
+        html = client.fetch(url)
+        last_html, last_url = html, client.last_url or url
+        boxes = html.count('class="game-box')
+        landed = "" if client.last_url in (url, "") else f" -> {client.last_url}"
+        trail.append(f"{url}{landed}  ({len(html):,}B, game-box={boxes})")
+        return html
+
+    lines = parse_poolhost(attempt(picks_url))
+    if lines:
+        return lines, trail
+
+    for path in WARMUP_PATHS:
+        warm_html = attempt(urljoin(base, path))
+
+        # On the pool list, step into a pool before retrying the sheet.
+        if path == "/mypools":
+            soup = BeautifulSoup(warm_html, "lxml")
+            entries = [
+                a["href"] for a in soup.find_all("a", href=True)
+                if "/profootball/" in a["href"] and "picks" not in a["href"]
+            ]
+            if entries:
+                attempt(urljoin(base, entries[0]))
+
+        lines = parse_poolhost(attempt(picks_url))
+        if lines:
+            return lines, trail
+
+    raise SheetNotFound(
+        "could not reach a page with games on it", trail, last_html, last_url
+    )

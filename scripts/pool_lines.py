@@ -44,7 +44,7 @@ def main() -> None:
 
     if args.live:
         from weekly_picks.pool.client import PoolHostClient
-        from weekly_picks.pool.poolhost import describe_page
+        from weekly_picks.pool.poolhost import SheetNotFound, describe_page, navigate_to_sheet
 
         client = PoolHostClient(url=args.url)
         login_note = "reported success"
@@ -54,17 +54,20 @@ def main() -> None:
             login_note = f"FAILED — {exc}"
             print(f"login failed ({exc}); trying the page unauthenticated", file=sys.stderr)
 
-        html = client.fetch()
         try:
-            lines = parse_sheet(html)
-        except ParseError as exc:
+            lines, trail = navigate_to_sheet(client)
+            for step in trail:
+                print(f"  tried {step}", file=sys.stderr)
+        except SheetNotFound as exc:
             # Nearly always "we were handed the wrong page" rather than a
             # parsing bug, so say which page. login() can only check that no
             # password box came back, which a site whose login lives on its
             # own page will pass while still being logged out.
             print(f"\n{exc}\n", file=sys.stderr)
             print(f"  login         : {login_note}", file=sys.stderr)
-            print(describe_page(html, client.last_url), file=sys.stderr)
+            for step in exc.trail:
+                print(f"  tried         : {step}", file=sys.stderr)
+            print(describe_page(exc.last_html, exc.last_url), file=sys.stderr)
             print(
                 "\nIf 'password input' says YES, or the fetched url is not the picks\n"
                 "page, the session is not authenticated — check POOLHOST_USERNAME and\n"
@@ -74,7 +77,7 @@ def main() -> None:
                 file=sys.stderr,
             )
             raise SystemExit(1)
-        origin = client.url
+        origin = client.last_url or client.url
     elif args.html:
         lines, origin = parse_sheet(args.html.read_text(encoding="utf-8")), str(args.html)
     else:
