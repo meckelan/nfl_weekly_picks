@@ -1,15 +1,19 @@
 name: Thursday picks
 
-# Manual for now. Once scrape_pool has been verified against the live site,
-# uncomment the schedule to have this run itself.
+# Thursday afternoon, before the week's first kickoff.
 #
-#   16:00 UTC = 12:00 ET while daylight saving is on, 11:00 ET after it ends —
-#   comfortably before Thursday night kickoff and late enough that the week's
-#   lines are posted.
+#   21:00 UTC = 17:00 ET while daylight saving is on, 16:00 ET after it ends.
+#
+# Deliberately late in the day rather than at noon. The pool's lines are fixed
+# once posted; the market keeps moving all week, and the edge is the gap
+# between them — so every extra hour of market movement we capture is a
+# slightly sharper pick. Thursday night kickoff is 20:15 ET, which leaves about
+# three hours of slack for GitHub to start a scheduled run late, as it often
+# does under load.
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "0 16 * * 4"
+  schedule:
+    - cron: "0 21 * * 4"
 
 permissions:
   contents: write
@@ -34,7 +38,13 @@ jobs:
       - name: Refresh schedule, results and market lines
         run: python scripts/fetch_data.py
 
+      # Allowed to fail: the underdog rule only needs the market line, so a
+      # broken scrape should cost the line-edge comparison, not all sixteen
+      # picks. The job is failed deliberately at the end so the failure still
+      # gets reported.
       - name: Capture the pool's lines
+        id: capture
+        continue-on-error: true
         env:
           POOLHOST_URL: ${{ secrets.POOLHOST_URL }}
           POOLHOST_USERNAME: ${{ secrets.POOLHOST_USERNAME }}
@@ -62,3 +72,13 @@ jobs:
             git commit -m "Pool lines: week captured automatically"
             git push
           fi
+
+      # Picks are made and uploaded by now, but a failed scrape still needs to
+      # be visible — otherwise the line edges quietly stop appearing and the
+      # run goes on looking green.
+      - name: Report a failed scrape
+        if: steps.capture.outcome == 'failure'
+        run: |
+          echo "::error::Pool scrape failed — picks were made from market lines only."
+          echo "The log above says which page was served; see scripts/pool_lines.py."
+          exit 1
