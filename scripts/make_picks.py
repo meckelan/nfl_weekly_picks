@@ -29,7 +29,9 @@ from weekly_picks.pool import PoolSheet
 from weekly_picks.recommend import MIN_EDGE, recommend, to_frame
 from weekly_picks.schedule import current_week, load_games, market_lines
 
-POOL_DIR = Path(__file__).resolve().parents[1] / "data" / "pool"
+ROOT = Path(__file__).resolve().parents[1]
+POOL_DIR = ROOT / "data" / "pool"
+PICKS_DIR = ROOT / "data" / "picks"
 
 
 def main() -> None:
@@ -42,6 +44,8 @@ def main() -> None:
     parser.add_argument("--csv", type=Path, default=None)
     parser.add_argument("--markdown", type=Path, default=None,
                         help="write a GitHub-flavoured summary, first line the title")
+    parser.add_argument("--save", action="store_true",
+                        help="also record the picks under data/picks/ for later grading")
     args = parser.parse_args()
 
     games = load_games()
@@ -117,6 +121,16 @@ def main() -> None:
             _markdown(season, week, edges, fades, frame, have_sheet, expected)
         )
         print(f"wrote {args.markdown}")
+
+    if args.save:
+        # Grading later must use the picks as issued. Re-deriving them from a
+        # refreshed games.csv silently swaps in closing lines, which changes
+        # which side the rule picks and quietly flatters or punishes the record
+        # — exactly the hindsight a backtest is supposed to avoid.
+        PICKS_DIR.mkdir(parents=True, exist_ok=True)
+        recorded = PICKS_DIR / f"{season}_wk{week:02d}.csv"
+        frame.to_csv(recorded, index=False)
+        print(f"recorded the picks as issued -> {recorded}")
 
 
 def _markdown(season, week, edges, fades, frame, have_sheet, expected) -> str:

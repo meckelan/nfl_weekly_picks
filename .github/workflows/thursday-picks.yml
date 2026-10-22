@@ -54,7 +54,7 @@ jobs:
 
       - name: Make the picks
         run: |
-          python scripts/make_picks.py --csv picks.csv --markdown picks.md | tee picks.txt
+          python scripts/make_picks.py --save --csv picks.csv --markdown picks.md | tee picks.txt
 
       - uses: actions/upload-artifact@v4
         with:
@@ -64,15 +64,15 @@ jobs:
             picks.txt
             picks.md
 
-      - name: Commit the captured sheet
+      - name: Commit the captured sheet and the picks
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add data/pool
+          git add data/pool data/picks
           if git diff --cached --quiet; then
             echo "Nothing new to commit."
           else
-            git commit -m "Pool lines: week captured automatically"
+            git commit -m "Pool lines and picks: week captured automatically"
             git push
           fi
 
