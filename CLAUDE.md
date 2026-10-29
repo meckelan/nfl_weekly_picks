@@ -76,6 +76,51 @@ Blended over a 272-pick season the rule is worth about **52%**, which is a
 season-to-season swing is ~8 games (1 SD), so this tilts the odds rather than
 deciding anything.
 
+## The pool, measured (week 8, 2026)
+
+17 players. Nobody is beating chance, and the test that settles it is not the
+leader's record but the field's spread:
+
+    leader                     58-46 (55.8%)
+    best of 17 coin-flippers   61.1-42.9 (58.8%) expected
+    P(luck reaches 58+)        92.5%
+
+    spread of win totals       3.97 observed vs 5.10 binomial
+    first-half/second-half r   +0.097
+
+Skill would have to spread records out MORE than binomial noise allows.
+They spread LESS, so there is no skill anywhere in the standings — not just
+none at the top. `scripts/analyze_field.py` re-runs all of this.
+
+**Herding, measured indirectly: ~80%.** Records spread less than independent
+picks would produce, and correlated picks are what compresses standings.
+Simulating herd rates to match the observed 3.97 lands near 80% — the field
+takes the same side about four games in five. One season, 17 players, so the
+interval is wide; treat it as the first real evidence rather than a settled
+number. crowd.py's prior (~73% at the average spread) was a little low.
+
+This does NOT change the picks. We already take the dog in every game without
+a line edge, which puts us on the minority side of 13 of 14 games, and the
+pool requires a pick in every game — so there is no further-opposite to go and
+no option to play only the herded ones.
+
+## The mechanism story is weaker than it looked
+
+Earlier notes here claimed the dog edge comes from books shading lines toward
+public favourites. That mechanism predicts the dog edge should grow where the
+public piles on hardest. Tested, it does not:
+
+    spread <=3 / 3.5-6.5 / 7-9.5 / 10+   50.59 / 51.09 / 51.65 / 52.29%
+    corr(|spread|, dog covers)            +0.017 (z +1.37, n=6849)
+    public team as favourite              51.03% disc -> 49.21% val
+    primetime                             46.67% disc -> 51.50% val
+
+The spread trend is monotonic but not significant, and the 10+ bucket does not
+replicate (53.74% -> 50.73%). The public-team proxy actively fails. So the
+~51% dog edge survives as an empirical regularity with era consistency, but
+the explanation for it does not hold up — which is a reason to hold it a
+little more loosely, not to abandon it.
+
 ## Reference only: differentiation (wrong objective here)
 
 Best-record-wins pays the MAXIMUM, not the mean. Picking by the same process
