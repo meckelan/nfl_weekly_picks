@@ -2,18 +2,22 @@ name: Thursday picks
 
 # Thursday afternoon, before the week's first kickoff.
 #
-#   21:00 UTC = 17:00 ET while daylight saving is on, 16:00 ET after it ends.
+#   18:00 UTC = 14:00 ET while daylight saving is on, 13:00 ET after it ends.
 #
-# Deliberately late in the day rather than at noon. The pool's lines are fixed
-# once posted; the market keeps moving all week, and the edge is the gap
-# between them — so every extra hour of market movement we capture is a
-# slightly sharper pick. Thursday night kickoff is 20:15 ET, which leaves about
-# three hours of slack for GitHub to start a scheduled run late, as it often
-# does under load.
+# Later in the day is better on paper — the pool's lines are fixed once posted
+# while the market keeps moving, so every extra hour of movement captured is a
+# slightly sharper pick. But the first scheduled run, set for 21:00, actually
+# started at 23:55: GitHub delayed it by nearly three hours and it landed
+# twenty minutes before the 20:15 ET kickoff. Thirty minutes more and the week
+# would have been missed entirely.
+#
+# So the schedule is sized for the delay rather than the ideal: 14:00 ET
+# nominal leaves roughly six hours of slack, and even a three-hour delay still
+# lands with hours to spare. Sharpness is worth less than arriving at all.
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 21 * * 4"
+    - cron: "0 18 * * 4"
 
 permissions:
   contents: write
