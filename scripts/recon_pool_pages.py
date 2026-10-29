@@ -127,6 +127,60 @@ def describe_controls(html: str) -> None:
         print(f"      week-ish script calls: {calls}")
 
 
+def count_filled_picks(html: str) -> tuple[int, int]:
+    """(populated pick cells, data rows) in the all-picks grid.
+
+    A populated grid is the signal that a past week was actually served. Only
+    counts are reported — never which team anyone took.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "lxml")
+    tables = soup.find_all("table")
+    if not tables:
+        return 0, 0
+    rows = tables[0].find_all("tr")[1:]
+    filled = 0
+    for row in rows:
+        cells = row.find_all(["td", "th"])[3:-2]          # the game columns
+        filled += sum(1 for c in cells if c.get_text(strip=True) or c.find("img"))
+    return filled, len(rows)
+
+
+def probe_past_week(client, base: str, week: int = 3) -> None:
+    """Find the URL shape that serves a completed week's picks."""
+    from urllib.parse import urljoin
+
+    candidates = [
+        ("GET", f"/profootball/allpicks/{week}", None),
+        ("GET", f"/profootball/allpicks?week={week}", None),
+        ("GET", f"/profootball/allpicks?wk={week}", None),
+        ("GET", f"/profootball/allpicks/week/{week}", None),
+        ("GET", f"/profootball/allpicks/{week}/True", None),
+        ("POST", "/profootball/allpicks", {"week": str(week)}),
+        ("POST", "/profootball/allpicks", {"Week": str(week)}),
+        ("POST", "/profootball/allpicks", {"WeekNumber": str(week)}),
+    ]
+
+    print(f"    probing for week {week}:")
+    for method, path, data in candidates:
+        url = urljoin(base, path)
+        try:
+            if method == "GET":
+                response = client.session.get(url, timeout=client.timeout)
+            else:
+                response = client.session.post(url, data=data, timeout=client.timeout)
+            response.raise_for_status()
+        except Exception as exc:                                   # noqa: BLE001
+            print(f"      {method:<4} {path:<38} FAILED {type(exc).__name__}")
+            continue
+
+        filled, rows = count_filled_picks(response.text)
+        landed = "" if response.url == url else f"  -> {response.url}"
+        print(f"      {method:<4} {path:<38} {len(response.text):>7,}B  "
+              f"rows={rows:<3} filled={filled:<4}{landed}")
+
+
 def main() -> None:
     from weekly_picks.pool.client import PoolHostClient
     from weekly_picks.pool.poolhost import SheetNotFound, navigate_to_sheet
@@ -164,6 +218,8 @@ def main() -> None:
         if path.endswith(("allpicks", "pickdistribution")):
             print("    controls:")
             describe_controls(html)
+        if path.endswith("allpicks"):
+            probe_past_week(client, base, week=3)
         print()
 
 
