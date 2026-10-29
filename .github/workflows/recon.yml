@@ -23,3 +23,11 @@ jobs:
           POOLHOST_USERNAME: ${{ secrets.POOLHOST_USERNAME }}
           POOLHOST_PASSWORD: ${{ secrets.POOLHOST_PASSWORD }}
         run: python scripts/recon_pool_pages.py
+
+      - name: Test the field against chance
+        if: always()
+        env:
+          POOLHOST_URL: ${{ secrets.POOLHOST_URL }}
+          POOLHOST_USERNAME: ${{ secrets.POOLHOST_USERNAME }}
+          POOLHOST_PASSWORD: ${{ secrets.POOLHOST_PASSWORD }}
+        run: python scripts/analyze_field.py
