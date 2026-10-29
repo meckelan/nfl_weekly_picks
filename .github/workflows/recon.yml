@@ -1,0 +1,25 @@
+name: Pool page recon
+
+# Manual only. Reports the structure of the pool's results pages so their
+# parsers can be written, since those pages are unreachable from a Claude Code
+# container. Prints shape and never content — those pages carry family members'
+# names and picks, and this log is public.
+on:
+  workflow_dispatch:
+
+jobs:
+  recon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Describe the pool's results pages
+        env:
+          POOLHOST_URL: ${{ secrets.POOLHOST_URL }}
+          POOLHOST_USERNAME: ${{ secrets.POOLHOST_USERNAME }}
+          POOLHOST_PASSWORD: ${{ secrets.POOLHOST_PASSWORD }}
+        run: python scripts/recon_pool_pages.py
