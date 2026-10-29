@@ -89,6 +89,44 @@ def describe_tables(html: str, limit: int = 4) -> None:
                 print(f"    {selector}: {len(found)}")
 
 
+def describe_controls(html: str) -> None:
+    """How the page lets you ask for a different week.
+
+    allpicks defaults to the current week; the field's past picks are the
+    point, so the selector has to be found. Values are printed because a week
+    number or a form field name identifies nobody.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "lxml")
+
+    for form in soup.find_all("form")[:3]:
+        fields = [
+            f"{f.get('name')}={f.get('type') or f.name}"
+            for f in form.find_all(("input", "select")) if f.get("name")
+        ]
+        print(f"      form action={form.get('action')!r} method={form.get('method')!r}")
+        print(f"        fields: {fields[:12]}")
+
+    for select in soup.find_all("select")[:3]:
+        options = [(o.get("value"), " ".join(o.get_text(" ", strip=True).split())[:14])
+                   for o in select.find_all("option")[:12]]
+        print(f"      select name={select.get('name')!r} id={select.get('id')!r}")
+        print(f"        options: {options}")
+
+    weekish = sorted({
+        a["href"] for a in soup.find_all("a", href=True)
+        if re.search(r"week|wk", a["href"], re.IGNORECASE)
+    })[:10]
+    if weekish:
+        print(f"      week-ish links: {weekish}")
+
+    scripts = " ".join(t.get_text() for t in BeautifulSoup(html, "lxml").find_all("script"))
+    calls = sorted(set(re.findall(r"[A-Za-z_$][\w$.]*\((?=[^)]*[Ww]eek)[^)]{0,40}\)", scripts)))[:8]
+    if calls:
+        print(f"      week-ish script calls: {calls}")
+
+
 def main() -> None:
     from weekly_picks.pool.client import PoolHostClient
     from weekly_picks.pool.poolhost import SheetNotFound, navigate_to_sheet
@@ -123,6 +161,9 @@ def main() -> None:
         if landed and landed != url:
             print(f"    redirected  : -> {landed}")
         describe_tables(html)
+        if path.endswith(("allpicks", "pickdistribution")):
+            print("    controls:")
+            describe_controls(html)
         print()
 
 
