@@ -25,6 +25,7 @@ import pandas as pd
 from weekly_picks.calibration import EdgeCalibration
 from weekly_picks.crowd import CrowdModel
 from weekly_picks.edge import compare
+from weekly_picks.market import resolve_source, save_snapshot
 from weekly_picks.pool import PoolSheet
 from weekly_picks.recommend import MIN_EDGE, recommend, to_frame
 from weekly_picks.schedule import current_week, load_games, market_lines
@@ -54,7 +55,20 @@ def main() -> None:
 
     calibration = EdgeCalibration.load()
     crowd = CrowdModel(slope=args.crowd_slope) if args.crowd_slope else CrowdModel()
-    market = market_lines(games, season, week)
+
+    # A live median across books, when a key is configured. nflverse's single
+    # daily snapshot has been caught a point off what books were showing, and
+    # the whole line-edge signal lives at half-point resolution.
+    source, source_note = resolve_source(games)
+    quotes = None
+    try:
+        quotes = source.quotes(season, week)
+        if quotes:
+            save_snapshot(quotes, season, week, source.name)
+    except Exception as exc:                                       # noqa: BLE001
+        source_note = f"{source.name} FAILED ({exc}) — fell back to the schedule snapshot"
+        quotes = None
+    market = market_lines(games, season, week, quotes)
 
     sheet_path = POOL_DIR / f"{season}_wk{week:02d}.json"
     have_sheet = sheet_path.exists()
@@ -76,6 +90,7 @@ def main() -> None:
 
     print(f"\n{'=' * 78}")
     print(f"  {season} WEEK {week}   pool sheet: {captured}")
+    print(f"  market     : {source_note}")
     print(f"  crowd model: {'fitted, n=' + str(crowd.observations) if crowd.calibrated else 'prior (not yet fitted to your pool)'}")
     print(f"{'=' * 78}\n")
 

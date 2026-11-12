@@ -76,20 +76,38 @@ def load_games(
     return df.sort_values(["season", "week", "kickoff"]).reset_index(drop=True)
 
 
-def market_lines(games: pd.DataFrame, season: int, week: int) -> pd.DataFrame:
+def market_lines(games: pd.DataFrame, season: int, week: int,
+                 quotes: dict | None = None) -> pd.DataFrame:
     """The market's spread for one week, as the reference the pool is judged against.
 
     Returns one row per game with `market_spread` on the home-favored-positive
     convention. Games the source has no line for are kept with NaN so a missing
     line is visible rather than silently dropped.
+
+    `quotes` overrides the number from games.csv with a live one, keyed by the
+    pair of teams (see market.py). A game the live source has no quote for
+    falls back to the schedule's own value rather than dropping out, and
+    `market_books` records how many bookmakers stood behind each number — 0
+    meaning it came from the schedule snapshot.
     """
     slate = games[(games["season"] == season) & (games["week"] == week)].copy()
     slate = slate.rename(columns={"spread_line": "market_spread"})
+
+    books = []
+    if quotes:
+        spreads = []
+        for row in slate.itertuples():
+            quote = quotes.get(frozenset({row.away_team, row.home_team}))
+            spreads.append(quote.home_spread if quote else row.market_spread)
+            books.append(quote.books if quote else 0)
+        slate["market_spread"] = spreads
+    slate["market_books"] = books if books else 0
+
     return slate[
         [
             "game_id", "season", "week", "kickoff", "weekday",
-            "away_team", "home_team", "market_spread", "total_line",
-            "away_moneyline", "home_moneyline", "location",
+            "away_team", "home_team", "market_spread", "market_books",
+            "total_line", "away_moneyline", "home_moneyline", "location",
         ]
     ].reset_index(drop=True)
 
