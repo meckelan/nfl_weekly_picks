@@ -1,0 +1,134 @@
+{
+  "season": 2026,
+  "week": 10,
+  "source": "https://www.poolhost.com/profootball/picks",
+  "captured_at": "2026-11-12T19:17:08Z",
+  "lines": [
+    {
+      "favorite": "NYG",
+      "underdog": "WAS",
+      "points": 2.5,
+      "raw": "WAS at NYG (home -2.5)",
+      "kickoff": "Thu. Nov. 12 - 08:15 PM",
+      "home_team": "NYG",
+      "pool_game_id": "185"
+    },
+    {
+      "favorite": "DET",
+      "underdog": "NE",
+      "points": 3.0,
+      "raw": "NE at DET (home -3)",
+      "kickoff": "Sun. Nov. 15 - 09:30 AM",
+      "home_team": "DET",
+      "pool_game_id": "186"
+    },
+    {
+      "favorite": "KC",
+      "underdog": "ATL",
+      "points": 3.0,
+      "raw": "KC at ATL (home +3)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "ATL",
+      "pool_game_id": "187"
+    },
+    {
+      "favorite": "HOU",
+      "underdog": "CLE",
+      "points": 5.0,
+      "raw": "HOU at CLE (home +5)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "CLE",
+      "pool_game_id": "188"
+    },
+    {
+      "favorite": "GB",
+      "underdog": "MIN",
+      "points": 3.0,
+      "raw": "MIN at GB (home -3)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "GB",
+      "pool_game_id": "189"
+    },
+    {
+      "favorite": "IND",
+      "underdog": "MIA",
+      "points": 3.5,
+      "raw": "MIA at IND (home -3.5)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "IND",
+      "pool_game_id": "190"
+    },
+    {
+      "favorite": "NO",
+      "underdog": "CAR",
+      "points": 2.5,
+      "raw": "CAR at NO (home -2.5)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "NO",
+      "pool_game_id": "191"
+    },
+    {
+      "favorite": "BUF",
+      "underdog": "NYJ",
+      "points": 7.5,
+      "raw": "BUF at NYJ (home +7.5)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "NYJ",
+      "pool_game_id": "192"
+    },
+    {
+      "favorite": "JAX",
+      "underdog": "TEN",
+      "points": 10.5,
+      "raw": "JAX at TEN (home +10.5)",
+      "kickoff": "Sun. Nov. 15 - 01:00 PM",
+      "home_team": "TEN",
+      "pool_game_id": "193"
+    },
+    {
+      "favorite": "LA",
+      "underdog": "ARI",
+      "points": 9.5,
+      "raw": "LA at ARI (home +9.5)",
+      "kickoff": "Sun. Nov. 15 - 04:05 PM",
+      "home_team": "ARI",
+      "pool_game_id": "194"
+    },
+    {
+      "favorite": "SEA",
+      "underdog": "LV",
+      "points": 6.5,
+      "raw": "SEA at LV (home +6.5)",
+      "kickoff": "Sun. Nov. 15 - 04:05 PM",
+      "home_team": "LV",
+      "pool_game_id": "195"
+    },
+    {
+      "favorite": "SF",
+      "underdog": "DAL",
+      "points": 4.5,
+      "raw": "SF at DAL (home +4.5)",
+      "kickoff": "Sun. Nov. 15 - 04:25 PM",
+      "home_team": "DAL",
+      "pool_game_id": "196"
+    },
+    {
+      "favorite": "CIN",
+      "underdog": "PIT",
+      "points": 3.5,
+      "raw": "PIT at CIN (home -3.5)",
+      "kickoff": "Sun. Nov. 15 - 08:20 PM",
+      "home_team": "CIN",
+      "pool_game_id": "197"
+    },
+    {
+      "favorite": "BAL",
+      "underdog": "LAC",
+      "points": 4.0,
+      "raw": "LAC at BAL (home -4)",
+      "kickoff": "Mon. Nov. 16 - 08:15 PM",
+      "home_team": "BAL",
+      "pool_game_id": "198"
+    }
+  ]
+}
