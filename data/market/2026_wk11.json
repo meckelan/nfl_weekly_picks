@@ -1,0 +1,99 @@
+{
+  "season": 2026,
+  "week": 11,
+  "source": "nflverse (daily snapshot)",
+  "fetched_at": "2026-11-20T00:09:02Z",
+  "quotes": [
+    {
+      "away_team": "ARI",
+      "home_team": "KC",
+      "home_spread": 16.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "BAL",
+      "home_team": "CAR",
+      "home_spread": 3.0,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "CIN",
+      "home_team": "WAS",
+      "home_spread": -6.0,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "IND",
+      "home_team": "HOU",
+      "home_spread": 12.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "JAX",
+      "home_team": "NYG",
+      "home_spread": -6.0,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "LV",
+      "home_team": "DEN",
+      "home_spread": 10.0,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "MIA",
+      "home_team": "BUF",
+      "home_spread": 16.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "MIN",
+      "home_team": "SF",
+      "home_spread": 3.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "NO",
+      "home_team": "CHI",
+      "home_spread": 11.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "NYJ",
+      "home_team": "LAC",
+      "home_spread": 3.0,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "PIT",
+      "home_team": "PHI",
+      "home_spread": -4.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "TB",
+      "home_team": "DET",
+      "home_spread": 6.0,
+      "books": 0,
+      "spread_of_books": 0.0
+    },
+    {
+      "away_team": "TEN",
+      "home_team": "DAL",
+      "home_spread": 8.5,
+      "books": 0,
+      "spread_of_books": 0.0
+    }
+  ]
+}
